@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using OrderService.Repository.Interface;
 using OrderService.Repository.Service;
+using System;
 using System.Data;
 using System.Threading.Channels;
 
@@ -22,7 +23,7 @@ namespace OrderService.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(string username, string password)
         {
-            (bool userExistFlag, string userToken) = await _oderRepository.IsAuthenticated(username, password);
+            (bool userExistFlag, string userToken,int Id) = await _oderRepository.IsAuthenticated(username, password);
             if (userExistFlag)
             {
                 if (!string.IsNullOrEmpty(userToken))
