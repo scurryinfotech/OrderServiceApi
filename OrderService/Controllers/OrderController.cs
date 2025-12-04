@@ -263,7 +263,7 @@ namespace OrderService.Controllers
 
             user.CreatedDate = DateTime.Now;
 
-            int newUserId = await _userRepository.AddUser(user);
+            int newUserId = await _userRepository.  AddUser(user);
             if (newUserId > 0)
             {
                 return Ok(new
