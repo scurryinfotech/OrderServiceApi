@@ -723,7 +723,7 @@ ORDER BY o.Id ASC;
 
 
 
-        #region this is to get order online
+        #region 
         public async Task<List<OrderListModel>> GetOrderHomeDelivery(int userId)
         {
             List<OrderListModel> orderList = new List<OrderListModel>();
@@ -931,8 +931,6 @@ ORDER BY o.Id ASC;
 
 
 
-
-
         #endregion
 
         #region
@@ -974,7 +972,7 @@ ORDER BY o.Id ASC;
         {
             try
             {
-                connection(); // your existing connection initializer
+                connection(); 
                 SqlCommand cmd = new SqlCommand(
                     "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailable'", con);
                 cmd.CommandType = CommandType.Text;
