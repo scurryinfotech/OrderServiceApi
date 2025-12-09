@@ -509,7 +509,6 @@ namespace OrderService.Controllers
         }
 
         [HttpPost]
-
         public async Task<IActionResult> CoffeeOrder([FromBody] CoffeeOrder order)
         {
             if (order == null)
@@ -591,7 +590,24 @@ namespace OrderService.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPassword model)
+        {
+            if (model == null)
+            {
+                return BadRequest(new { message = "Invalid request" });
+            }
+            bool updated = await _oderRepository.ResetPasswordOnline(model.Phone, model.NewPassword);
 
+            if (updated)
+            {
+                return Ok(new { message = "Password reset successful" });
+            }
+            else
+            {
+                return StatusCode(500, new { message = "Failed to reset password" });
+            }
+        }
 
         #endregion
 

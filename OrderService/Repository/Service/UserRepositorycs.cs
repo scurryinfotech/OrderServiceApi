@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using OrderService.Model;
 using OrderService.Repository.Interface;
 using System.Data;
@@ -9,7 +10,7 @@ namespace OrderService.Repository.Service
     public class UserRepository : IUserRepository
     {
         private readonly string _connectionString;
-        private readonly IJwtService _jwtService; // Changed from object to IJwtService
+        private readonly IJwtService _jwtService; 
 
         public UserRepository(IConfiguration configuration, IJwtService jwtService) // Inject IJwtService
         {
@@ -80,6 +81,13 @@ namespace OrderService.Repository.Service
             }
             return null;
         }
+
+        //public Task<bool> ResetPassword(string phone, string newPassword)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+
     }
 }
   

@@ -14,6 +14,8 @@ namespace OrderService.Repository.Service
         private IConfiguration Configuration;
         private SqlConnection con;
         private string _connectionString;
+        private object _configuration;
+
         //private IUserRepository _userRepository;
 
         public OrderRepository(IConfiguration _configuration)
@@ -1212,24 +1214,55 @@ ORDER BY o.Id ASC;
         }
 
 
+        public async Task<bool> ResetPasswordOnline(string phone, string newPassword)
+        {
+            bool flag = false;
 
+            try
+            {
+                connection(); 
 
+                using var cmd = new SqlCommand("UPDATE Users SET Password = @Password WHERE Phone = @Phone", con)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("@Phone", SqlDbType.NVarChar, 20).Value = phone;
+                cmd.Parameters.Add("@Password", SqlDbType.NVarChar, 200).Value = newPassword;
 
+                var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(rowsParam);
+               
+                await cmd.ExecuteNonQueryAsync();
 
+                int rows = rowsParam.Value is int n ? n : 0;
+                flag = rows > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error ResetPasswordOnline: " + ex.Message);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
 
+            return flag;
+        }
 
-
-        //public Task<List<GetOrderCoffeeDetails>> GetCoffeeOrdersDetails(string username)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-
-
-
-
-
-
-        #endregion
     }
+
+
+
+    //public Task<List<GetOrderCoffeeDetails>> GetCoffeeOrdersDetails(string username)
+    //{
+    //    throw new NotImplementedException();
+    //}
+
+
+
+    #endregion
 }

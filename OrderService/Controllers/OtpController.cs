@@ -9,6 +9,7 @@ using System.Text.Json;
 public class OtpController : ControllerBase
 {
     private readonly IConfiguration _config;
+    private object _usertRepository;
 
     public OtpController(IConfiguration config)
     {
@@ -82,4 +83,9 @@ public class OtpController : ControllerBase
 
         return Ok(new { success = true, message = "OTP verified successfully" });
     }
+
+
+
+
+
 }

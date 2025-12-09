@@ -7,5 +7,6 @@ namespace OrderService.Repository.Interface
     {
         Task<int> AddUser(UserModel user);
         Task<UserModel?> LoginAsync(string loginame, string password);
+
     }
 }

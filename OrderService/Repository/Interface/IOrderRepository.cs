@@ -30,7 +30,11 @@ namespace OrderService.Repository.Interface
         Task<List<OrderBillModel>> GetBillByOrderId(string orderId);
         Task GetOrderOrderHistoryDash(string username);
         Task<List<OrderHistoryModel>> GetOrderHistory(string username);
-        
+       
+
+
+
         Task<bool> RejectOnlineOrder(string orderId);
+        Task<bool> ResetPasswordOnline(string phone, string newPassword);
     }
 }
