@@ -37,16 +37,8 @@ namespace OrderService.Controllers
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             if (_jwtService.ValidateToken(token))
             {
-                var orders = await _oderRepository.GetOrder(username);
-                if (orders.Count == 0)
-                {
-                    return NoContent();
-
-                }
-                else
-                {
-                    return Ok(orders);
-                }
+                var orders = await _oderRepository.GetOrder(username);              
+                    return Ok(orders);             
             }
             else
             {
@@ -237,7 +229,16 @@ namespace OrderService.Controllers
 
             return StatusCode(500, "Failed to save summary");
         }
+        [HttpPost]
+        public async Task<IActionResult> SaveOrderSummaryOnline([FromBody] OrderSummaryModel summary)
+        {
+            bool result = await _oderRepository.InsertOrderSummaryOnline(summary);
 
+            if (result)
+                return Ok(new { message = "Summary Saved Successfully" });
+
+            return StatusCode(500, "Failed to save summary");
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetBillByOrderId(string orderId)
@@ -327,21 +328,12 @@ namespace OrderService.Controllers
         public async Task<ActionResult<IEnumerable<OrderModel>>> GetOrderOnline(string username)
         {
             // Validate the token
-            
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             if (_jwtService.ValidateToken(token))
             {
                 var orders = await _oderRepository.GetOrder(username);
                 var onlineOrders = orders.Where(o => o.IsActive == 1 && o.OrderType == "Online").ToList();
-
-                if (onlineOrders.Count == 0)
-                {
-                    return Ok();
-                }
-                else
-                {
                     return Ok(onlineOrders);
-                }
             }
             else
             {
