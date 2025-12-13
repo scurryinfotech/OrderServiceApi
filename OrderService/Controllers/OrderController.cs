@@ -20,7 +20,7 @@ namespace OrderService.Controllers
         private readonly IConfiguration _configuration;
 
         private readonly IJwtService _jwtService;
-        
+
 
         public OrderController(IOrderRepository oderRepository, IJwtService jwtService, IUserRepository userRepository)
         {
@@ -38,15 +38,7 @@ namespace OrderService.Controllers
             if (_jwtService.ValidateToken(token))
             {
                 var orders = await _oderRepository.GetOrder(username);
-                if (orders.Count == 0)
-                {
-                    return NoContent();
-
-                }
-                else
-                {
-                    return Ok(orders);
-                }
+                return Ok(orders);
             }
             else
             {
@@ -82,8 +74,8 @@ namespace OrderService.Controllers
         {
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             if (_jwtService.ValidateToken(token))
-        {
-                var orders = await _oderRepository.GetMenuCategory(username); 
+            {
+                var orders = await _oderRepository.GetMenuCategory(username);
                 if (orders.Count == 0)
                 {
                     return NoContent();
@@ -107,9 +99,9 @@ namespace OrderService.Controllers
             if (_jwtService.ValidateToken(token))
             {
                 var orders = await _oderRepository.GetMenuSubcategory(username);
-                  if (orders.Count == 0)
+                if (orders.Count == 0)
                 {
-                    return NoContent();     
+                    return NoContent();
                 }
                 else
                 {
@@ -149,7 +141,7 @@ namespace OrderService.Controllers
             // Validate the token
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
-             if (_jwtService.ValidateToken(token))
+            if (_jwtService.ValidateToken(token))
             {
                 if (order == null)
                 {
@@ -237,7 +229,16 @@ namespace OrderService.Controllers
 
             return StatusCode(500, "Failed to save summary");
         }
+        [HttpPost]
+        public async Task<IActionResult> SaveOrderSummaryOnline([FromBody] OrderSummaryModel summary)
+        {
+            bool result = await _oderRepository.InsertOrderSummaryOnline(summary);
 
+            if (result)
+                return Ok(new { message = "Summary Saved Successfully" });
+
+            return StatusCode(500, "Failed to save summary");
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetBillByOrderId(string orderId)
@@ -263,7 +264,7 @@ namespace OrderService.Controllers
 
             user.CreatedDate = DateTime.Now;
 
-            int newUserId = await _userRepository.  AddUser(user);
+            int newUserId = await _userRepository.AddUser(user);
             if (newUserId > 0)
             {
                 return Ok(new
@@ -276,7 +277,7 @@ namespace OrderService.Controllers
                         name = user.Name,
                         createdDate = user.CreatedDate
                     },
-                    token = token 
+                    token = token
                 });
             }
             else
@@ -289,11 +290,11 @@ namespace OrderService.Controllers
             if (user == null || string.IsNullOrEmpty(user.loginame) || string.IsNullOrEmpty(user.Password))
                 return BadRequest("Username and password are required");
 
-           
+
             var authResult = await _oderRepository.IsAuthenticated(user.loginame, user.Password);
             bool isAuthenticated = authResult.Item1;
             string existingToken = authResult.Item2;
-            int id = authResult.Item3;  
+            int id = authResult.Item3;
 
             if (!isAuthenticated)
                 return Unauthorized(new { success = false, message = "Invalid username or password" });
@@ -312,36 +313,55 @@ namespace OrderService.Controllers
                 {
                     userId = id,
                     loginame = user.loginame,
-                    
+
                 },
                 token = token,
                 expires = expiry,
-                Name=user.Name
-                
+                Name = user.Name
+
             });
         }
 
 
         #region Start for Online orders
+        [HttpPost]
+        public async Task<IActionResult> SetAvailabilityHome([FromBody] bool isAvailable)
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (!_jwtService.ValidateToken(token))
+                return Unauthorized();
+            bool result = await _oderRepository.UpdateAvailability(isAvailable);
+            if (result)
+                return Ok();
+            else
+                return StatusCode(500, "Failed to update coffee order items");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailabilityOnline()
+        {
+            
+
+            try
+            {
+                bool isAvailable = await _oderRepository.GetAvailabilityOnline();
+                return Ok(isAvailable);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderModel>>> GetOrderOnline(string username)
         {
             // Validate the token
-            
             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             if (_jwtService.ValidateToken(token))
             {
                 var orders = await _oderRepository.GetOrder(username);
                 var onlineOrders = orders.Where(o => o.IsActive == 1 && o.OrderType == "Online").ToList();
-
-                if (onlineOrders.Count == 0)
-                {
-                    return Ok();
-                }
-                else
-                {
-                    return Ok(onlineOrders);
-                }
+                return Ok(onlineOrders);
             }
             else
             {
@@ -352,10 +372,10 @@ namespace OrderService.Controllers
         public async Task<ActionResult<IEnumerable<OrderModel>>> GetOrderHome(string? username, int? userId = null)
         {
             // Validate the token
-             var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             if (_jwtService.ValidateToken(token))
             {
-                var orders = await _oderRepository.GetOrderHomeDelivery(userId??0);
+                var orders = await _oderRepository.GetOrderHomeDelivery(userId ?? 0);
                 if (orders.Count == 0)
                 {
                     return NoContent();
@@ -390,7 +410,7 @@ namespace OrderService.Controllers
                 }
                 else
                 {
-                    
+
                     return StatusCode(500, new { error = "Failed to add order. Check server logs for details." });
 
                 }
@@ -470,21 +490,21 @@ namespace OrderService.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetAvailability(string username)
-{
-    var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-    if (!_jwtService.ValidateToken(token))
-        return Unauthorized();
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (!_jwtService.ValidateToken(token))
+                return Unauthorized();
 
-    try
-    {
-        bool isAvailable = await _oderRepository.GetAvailability();
-        return Ok(isAvailable);
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { error = ex.Message });
-    }
-}
+            try
+            {
+                bool isAvailable = await _oderRepository.GetAvailability();
+                return Ok(isAvailable);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
 
 
         [HttpGet]
@@ -504,7 +524,7 @@ namespace OrderService.Controllers
             var menu = await _oderRepository.GetCoffeeMenu(username);
 
             if (menu == null || menu.Count == 0)
-                return Ok(new List<CoffeeMenu>()); 
+                return Ok(new List<CoffeeMenu>());
             return Ok(menu);
         }
 

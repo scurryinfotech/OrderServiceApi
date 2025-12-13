@@ -36,5 +36,7 @@ namespace OrderService.Repository.Interface
 
         Task<bool> RejectOnlineOrder(string orderId);
         Task<bool> ResetPasswordOnline(string phone, string newPassword);
+        Task<bool> InsertOrderSummaryOnline(OrderSummaryModel summary);
+        Task<bool> GetAvailabilityOnline();
     }
 }

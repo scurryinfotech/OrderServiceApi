@@ -268,7 +268,6 @@ namespace OrderService.Repository.Service
             return itemList;
         }
 
-
         public async Task<bool> AddOrder(OrderModel order)
 
         {
@@ -393,7 +392,6 @@ namespace OrderService.Repository.Service
                     con.Close();
             }
         }
-
 
         public async Task<bool> InsertToken(string username, string token, DateTime expiryDate)
         {
@@ -520,8 +518,7 @@ namespace OrderService.Repository.Service
             }
             return flag;
         }
-
-
+   
         public async Task<List<OrderHistoryModel>> GetOrderHistory(string userName)
         {
             List<OrderHistoryModel> historyList = new List<OrderHistoryModel>();
@@ -583,9 +580,6 @@ namespace OrderService.Repository.Service
             return historyList;
         }
 
-
-
-
         public async Task<bool> InsertOrderSummary(OrderSummaryModel summary)
         {
             bool flag = false;
@@ -605,6 +599,54 @@ namespace OrderService.Repository.Service
                 cmd.Parameters.Add("@TotalAmount", SqlDbType.Decimal).Value = summary.TotalAmount;
                 cmd.Parameters.Add("@DiscountAmount", SqlDbType.Decimal).Value = summary.DiscountAmount;
                 cmd.Parameters.Add("@FinalAmount", SqlDbType.Decimal).Value = summary.FinalAmount;
+                cmd.Parameters.Add("@PaymentMode", SqlDbType.NVarChar, 50).Value = summary.PaymentMode ?? (object)DBNull.Value;
+
+                // OUTPUT PARAMETER
+                var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(rowsParam);
+
+                // EXECUTE
+                _ = await cmd.ExecuteNonQueryAsync();
+
+                var rows = rowsParam.Value is int n ? n : 0;
+                flag = rows > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+
+            return flag;
+        }
+        
+        public async Task<bool> InsertOrderSummaryOnline(OrderSummaryModel summary)
+        {
+            bool flag = false;
+
+            try
+            {
+                connection();
+
+                using var cmd = new SqlCommand("sp_InsertOrderSummary", con)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 100).Value = summary.OrderId;
+                cmd.Parameters.Add("@CustomerName", SqlDbType.NVarChar, 100).Value = summary.CustomerName ?? (object)DBNull.Value;
+                cmd.Parameters.Add("@Phone", SqlDbType.NVarChar, 20).Value = summary.Phone ?? (object)DBNull.Value;
+                cmd.Parameters.Add("@TotalAmount", SqlDbType.Decimal).Value = summary.TotalAmount;
+                cmd.Parameters.Add("@DiscountAmount", SqlDbType.Decimal).Value = summary.DiscountAmount;
+                cmd.Parameters.Add("@FinalAmount", SqlDbType.Decimal).Value = summary.FinalAmount;
+                cmd.Parameters.Add("@PaymentMode",SqlDbType.NVarChar, 20).Value = summary.PaymentMode;
                 //cmd.Parameters.Add("@PaymentMode", SqlDbType.NVarChar, 50).Value = summary.PaymentMode ?? (object)DBNull.Value;
 
                 // OUTPUT PARAMETER
@@ -632,8 +674,6 @@ namespace OrderService.Repository.Service
 
             return flag;
         }
-
-
 
         public async Task<List<OrderService.Model.OrderBillModel>> GetBillByOrderId(string orderId)
         {
@@ -722,10 +762,67 @@ ORDER BY o.Id ASC;
             return list;
         }
 
-
-
-
         #region 
+        public async Task<bool> GetAvailabilityOnline()
+        {
+            bool isAvailable = false;
+
+            try
+            {
+                connection();
+                SqlCommand cmd = new SqlCommand("SELECT SettingValue FROM AppSettings WHERE SettingKey = 'IsOrderingAvailableOnline'", con);
+                cmd.CommandType = CommandType.Text;
+
+                if (con.State == ConnectionState.Closed)
+                    con.Open();
+
+                var result = await cmd.ExecuteScalarAsync();
+                if (result != null && result != DBNull.Value)
+                {
+                    string value = result.ToString().ToLower();
+                    isAvailable = value == "true";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error checking availability: " + ex.Message);
+
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+
+            return isAvailable;
+        }
+        public async Task<bool> UpdateAvailabilityOnline(bool isAvailable)
+        {
+            try
+            {
+                connection();
+                SqlCommand cmd = new SqlCommand(
+                    "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailable'", con);
+                cmd.CommandType = CommandType.Text;
+                cmd.Parameters.AddWithValue("@value", isAvailable ? "true" : "false");
+
+                if (con.State == ConnectionState.Closed)
+                    con.Open();
+
+                int rows = await cmd.ExecuteNonQueryAsync();
+                return rows > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error updating availability: " + ex.Message);
+                return false;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+        }
         public async Task<List<OrderListModel>> GetOrderHomeDelivery(int userId)
         {
             List<OrderListModel> orderList = new List<OrderListModel>();
@@ -930,13 +1027,9 @@ ORDER BY o.Id ASC;
 
             return flag;
         }
-
-
-
         #endregion
 
         #region
-
         public async Task<bool> GetAvailability()
         {
             bool isAvailable = false;
@@ -976,7 +1069,7 @@ ORDER BY o.Id ASC;
             {
                 connection(); 
                 SqlCommand cmd = new SqlCommand(
-                    "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailable'", con);
+                    "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailableOnline'", con);
                 cmd.CommandType = CommandType.Text;
                 cmd.Parameters.AddWithValue("@value", isAvailable ? "true" : "false");
 
@@ -997,9 +1090,6 @@ ORDER BY o.Id ASC;
                     con.Close();
             }
         }
-
-
-
         public async Task<List<CoffeeMenu>> GetCoffeeMenu(string UserName)
         {
             List<CoffeeMenu> itemList = new List<CoffeeMenu>();
@@ -1049,8 +1139,6 @@ ORDER BY o.Id ASC;
             }
             return itemList;
         }
-
-      
         public async Task<bool> CoffeeOrder(CoffeeOrder order)
         {
             bool flag = false;
@@ -1212,8 +1300,6 @@ ORDER BY o.Id ASC;
         {
             throw new NotImplementedException();
         }
-
-
         public async Task<bool> ResetPasswordOnline(string phone, string newPassword)
         {
             bool flag = false;
@@ -1222,7 +1308,7 @@ ORDER BY o.Id ASC;
             {
                 connection(); 
 
-                using var cmd = new SqlCommand("UPDATE Users SET Password = @Password WHERE Phone = @Phone", con)
+                using var cmd = new SqlCommand("sp_ResetPassword", con)
                 {
                     CommandType = CommandType.StoredProcedure
                 };
@@ -1255,14 +1341,9 @@ ORDER BY o.Id ASC;
 
     }
 
-
-
     //public Task<List<GetOrderCoffeeDetails>> GetCoffeeOrdersDetails(string username)
     //{
     //    throw new NotImplementedException();
     //}
-
-
-
     #endregion
 }
