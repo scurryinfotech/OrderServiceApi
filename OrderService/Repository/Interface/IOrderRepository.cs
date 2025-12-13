@@ -20,7 +20,6 @@ namespace OrderService.Repository.Interface
         Task<bool> placeOnline(OrderModel order);
         Task<bool> UpdateOnlineStatus(OnlineOrderModel updatedOrders);
         Task<List<CoffeeMenu>> GetCoffeeMenu(string username);
-        //Task<bool> CoffeeOrder(CoffeeMenu order);
         Task<bool> CoffeeOrder(CoffeeOrder order);
         Task<List<GetOrderCoffeeDetails>> GetCoffeeOrdersDetails(string username);
         Task<bool> UpdateCoffeeOrderStatus(updateCoffeeDetails updatedOrders);
@@ -30,13 +29,10 @@ namespace OrderService.Repository.Interface
         Task<List<OrderBillModel>> GetBillByOrderId(string orderId);
         Task GetOrderOrderHistoryDash(string username);
         Task<List<OrderHistoryModel>> GetOrderHistory(string username);
-       
-
-
-
         Task<bool> RejectOnlineOrder(string orderId);
         Task<bool> ResetPasswordOnline(string phone, string newPassword);
         Task<bool> InsertOrderSummaryOnline(OrderSummaryModel summary);
         Task<bool> GetAvailabilityOnline();
+        Task<bool> UpdateTableOrderStatus(OrderListModel updatedTableOrders);
     }
 }

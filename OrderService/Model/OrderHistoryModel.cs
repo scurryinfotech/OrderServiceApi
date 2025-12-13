@@ -14,6 +14,7 @@
         public decimal DiscountAmount { get; set; }
         public decimal FinalAmount { get; set; }
         public string PaymentMode { get; set; }
+        public string SpecialInstruction { get; set; }
         public DateTime Date { get; set; }
     }
 }

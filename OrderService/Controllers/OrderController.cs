@@ -191,7 +191,19 @@ namespace OrderService.Controllers
                 return StatusCode(500, "Failed to update order items");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> UpdateTableOrderItem([FromBody] OrderListModel updatedTableOrders)
+        {
+            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            if (!_jwtService.ValidateToken(token))
+                return Unauthorized();
 
+            bool result = await _oderRepository.UpdateTableOrderStatus(updatedTableOrders);
+            if (result)
+                return Ok();
+            else
+                return StatusCode(500, "Failed to update order items");
+        }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderHistoryModel>>> GetOrderHistory(string username)
@@ -202,15 +214,8 @@ namespace OrderService.Controllers
             if (_jwtService.ValidateToken(token))
             {
                 var history = await _oderRepository.GetOrderHistory(username);
-
-                if (history == null || history.Count == 0)
-                {
-                    return NoContent();
-                }
-                else
-                {
-                    return Ok(history);
-                }
+               return Ok(history);
+                
             }
             else
             {
@@ -229,6 +234,7 @@ namespace OrderService.Controllers
 
             return StatusCode(500, "Failed to save summary");
         }
+
         [HttpPost]
         public async Task<IActionResult> SaveOrderSummaryOnline([FromBody] OrderSummaryModel summary)
         {
