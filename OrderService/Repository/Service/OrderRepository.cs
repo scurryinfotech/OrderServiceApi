@@ -193,11 +193,6 @@ namespace OrderService.Repository.Service
                             SubcategoryName = row["subcategory_name"] == DBNull.Value ? string.Empty : Convert.ToString(row["subcategory_name"]),
                             Description = row["description"] == DBNull.Value ? string.Empty : Convert.ToString(row["description"]),
                             DisplayOrder = row["display_order"] == DBNull.Value ? 0 : Convert.ToInt32(row["display_order"]),
-                            // Uncomment and handle nulls for these as well if needed:
-                            // CreatedDate = row["CreatedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["CreatedDate"]),
-                            //CreatedBy = row["CreatedBy"] == DBNull.Value ? null : (int?)Convert.ToInt32(row["CreatedBy"]),
-                            // ModifiedDate = row["ModifiedDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(row["ModifiedDate"]),
-                            // ModifiedBy = row["ModifiedBy"] == DBNull.Value ? string.Empty : Convert.ToString(row["ModifiedBy"]),
                             IsActive = row["IsActive"] == DBNull.Value ? false : Convert.ToBoolean(row["IsActive"])
                         });
                     }
@@ -285,8 +280,6 @@ namespace OrderService.Repository.Service
                     cmd.Parameters.AddWithValue("@phone", order.userPhone ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@orderType", order.OrderType ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@address", order.Address ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@OrderType", order.OrderType ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@DeliveryType", order.DeliveryType ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@specialInstruction", order.specialInstruction ?? (object)DBNull.Value);
 
 
@@ -448,37 +441,6 @@ namespace OrderService.Repository.Service
 
             return flag;
         }
-        public async Task<bool> UpdateOrderStatus_old(OrderListModel updatedOrders)
-        {
-            bool flag = false;
-            try
-            {
-                connection();
-                //foreach (var order in updatedOrders) 
-                //{
-                    SqlCommand cmd = new SqlCommand("sp_UpdateOrderStatus", con);
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@OrderId", updatedOrders.Id); 
-                    cmd.Parameters.AddWithValue("@StatusId", updatedOrders.OrderStatusId);
-                    //cmd.Parameters.AddWithValue("@FullPortion", updatedOrders.FullPortion);
-                    //cmd.Parameters.AddWithValue("@HalfPortion", updatedOrders.HalfPortion);
-                    //cmd.Parameters.AddWithValue("@Price", updatedOrders.Price);
-                    //cmd.Parameters.AddWithValue("@ModifiedBy", order.ModifiedBy ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@IsActive", order.IsActive);
-                    int i = await cmd.ExecuteNonQueryAsync();
-                    if (i > 0)
-                    {
-                        flag = true;
-                    }
-                //}
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-            }
-
-            return flag;
-        }
 
         public async Task<bool> UpdateOrderStatus(OrderListModel updatedOrders)
         {
@@ -546,19 +508,14 @@ namespace OrderService.Repository.Service
                                 CustomerName = dr["CustomerName"] != DBNull.Value ? dr["CustomerName"].ToString() : "",
                                 Phone = dr["Phone"] != DBNull.Value ? dr["Phone"].ToString() : "",
                                 TableNo = dr["TableNo"] != DBNull.Value ? Convert.ToInt32(dr["TableNo"]) : 0,
-
                                 ItemName = dr["ItemName"] != DBNull.Value ? dr["ItemName"].ToString() : "",
-
                                 FullPortion = dr["FullPortion"] != DBNull.Value ? Convert.ToInt32(dr["FullPortion"]) : 0,
                                 HalfPortion = dr["HalfPortion"] != DBNull.Value ? Convert.ToInt32(dr["HalfPortion"]) : 0,
                                 Price = dr["Price"] != DBNull.Value ? Convert.ToDecimal(dr["Price"]) : 0,
-
                                 TotalAmount = dr["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(dr["TotalAmount"]) : 0,
                                 DiscountAmount = dr["DiscountAmount"] != DBNull.Value ? Convert.ToDecimal(dr["DiscountAmount"]) : 0,
                                 FinalAmount = dr["FinalAmount"] != DBNull.Value ? Convert.ToDecimal(dr["FinalAmount"]) : 0,
-
                                 PaymentMode = dr["PaymentMode"] != DBNull.Value ? dr["PaymentMode"].ToString() : "",
-
                                 Date = dr["Date"] != DBNull.Value ? Convert.ToDateTime(dr["Date"]) : DateTime.MinValue
                             };
 
@@ -647,7 +604,6 @@ namespace OrderService.Repository.Service
                 cmd.Parameters.Add("@DiscountAmount", SqlDbType.Decimal).Value = summary.DiscountAmount;
                 cmd.Parameters.Add("@FinalAmount", SqlDbType.Decimal).Value = summary.FinalAmount;
                 cmd.Parameters.Add("@PaymentMode",SqlDbType.NVarChar, 20).Value = summary.PaymentMode;
-                //cmd.Parameters.Add("@PaymentMode", SqlDbType.NVarChar, 50).Value = summary.PaymentMode ?? (object)DBNull.Value;
 
                 // OUTPUT PARAMETER
                 var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
@@ -770,7 +726,8 @@ ORDER BY o.Id ASC;
             try
             {
                 connection();
-                SqlCommand cmd = new SqlCommand("SELECT SettingValue FROM AppSettings WHERE SettingKey = 'IsOrderingAvailableOnline'", con);
+                SqlCommand cmd = new SqlCommand("SELECT SettingValue FROM AppSettings WHERE SettingKey=@IsOrderingAvailableOnline", con);
+                cmd.Parameters.Add("@IsOrderingAvailableOnline", SqlDbType.NVarChar, 100).Value = "IsOrderingAvailableOnline";
                 cmd.CommandType = CommandType.Text;
 
                 if (con.State == ConnectionState.Closed)
@@ -779,8 +736,7 @@ ORDER BY o.Id ASC;
                 var result = await cmd.ExecuteScalarAsync();
                 if (result != null && result != DBNull.Value)
                 {
-                    string value = result.ToString().ToLower();
-                    isAvailable = value == "true";
+                    isAvailable = Convert.ToBoolean(result);
                 }
             }
             catch (Exception ex)
