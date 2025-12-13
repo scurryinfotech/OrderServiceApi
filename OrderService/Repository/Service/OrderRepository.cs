@@ -518,7 +518,7 @@ namespace OrderService.Repository.Service
             }
             return flag;
         }
-
+   
         public async Task<List<OrderHistoryModel>> GetOrderHistory(string userName)
         {
             List<OrderHistoryModel> historyList = new List<OrderHistoryModel>();
@@ -763,6 +763,66 @@ ORDER BY o.Id ASC;
         }
 
         #region 
+        public async Task<bool> GetAvailabilityOnline()
+        {
+            bool isAvailable = false;
+
+            try
+            {
+                connection();
+                SqlCommand cmd = new SqlCommand("SELECT SettingValue FROM AppSettings WHERE SettingKey = 'IsOrderingAvailableOnline'", con);
+                cmd.CommandType = CommandType.Text;
+
+                if (con.State == ConnectionState.Closed)
+                    con.Open();
+
+                var result = await cmd.ExecuteScalarAsync();
+                if (result != null && result != DBNull.Value)
+                {
+                    string value = result.ToString().ToLower();
+                    isAvailable = value == "true";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error checking availability: " + ex.Message);
+
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+
+            return isAvailable;
+        }
+        public async Task<bool> UpdateAvailabilityOnline(bool isAvailable)
+        {
+            try
+            {
+                connection();
+                SqlCommand cmd = new SqlCommand(
+                    "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailable'", con);
+                cmd.CommandType = CommandType.Text;
+                cmd.Parameters.AddWithValue("@value", isAvailable ? "true" : "false");
+
+                if (con.State == ConnectionState.Closed)
+                    con.Open();
+
+                int rows = await cmd.ExecuteNonQueryAsync();
+                return rows > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error updating availability: " + ex.Message);
+                return false;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+        }
         public async Task<List<OrderListModel>> GetOrderHomeDelivery(int userId)
         {
             List<OrderListModel> orderList = new List<OrderListModel>();
@@ -1009,7 +1069,7 @@ ORDER BY o.Id ASC;
             {
                 connection(); 
                 SqlCommand cmd = new SqlCommand(
-                    "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailable'", con);
+                    "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailableOnline'", con);
                 cmd.CommandType = CommandType.Text;
                 cmd.Parameters.AddWithValue("@value", isAvailable ? "true" : "false");
 
