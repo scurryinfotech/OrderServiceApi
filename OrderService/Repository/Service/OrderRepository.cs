@@ -516,7 +516,8 @@ namespace OrderService.Repository.Service
                                 DiscountAmount = dr["DiscountAmount"] != DBNull.Value ? Convert.ToDecimal(dr["DiscountAmount"]) : 0,
                                 FinalAmount = dr["FinalAmount"] != DBNull.Value ? Convert.ToDecimal(dr["FinalAmount"]) : 0,
                                 PaymentMode = dr["PaymentMode"] != DBNull.Value ? dr["PaymentMode"].ToString() : "",
-                                Date = dr["Date"] != DBNull.Value ? Convert.ToDateTime(dr["Date"]) : DateTime.MinValue
+                                Date = dr["Date"] != DBNull.Value ? Convert.ToDateTime(dr["Date"]) : DateTime.MinValue,
+                                SpecialInstruction = dr["specialInstructions"] != DBNull.Value ? dr["specialInstructions"].ToString() : ""
                             };
 
                             historyList.Add(item);
