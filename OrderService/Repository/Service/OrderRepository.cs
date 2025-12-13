@@ -480,7 +480,46 @@ namespace OrderService.Repository.Service
             }
             return flag;
         }
-   
+
+        public async Task<bool> UpdateTableOrderStatus(OrderListModel updatedTableOrders)
+        {
+            bool flag = false;
+            try
+            {
+                connection();
+                using var cmd = new SqlCommand("sp_UpdateTableOrderStatus", con)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 50).Value = updatedTableOrders.OrderId;
+                cmd.Parameters.Add("@StatusId", SqlDbType.Int).Value = updatedTableOrders.OrderStatusId;
+                cmd.Parameters.Add("@Payment_mode", SqlDbType.NVarChar, 50).Value = updatedTableOrders.paymentMode ?? (object)DBNull.Value;
+
+                var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(rowsParam);
+
+
+                _ = await cmd.ExecuteNonQueryAsync();
+
+                var rows = rowsParam.Value is int n ? n : 0;
+                flag = rows > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+            return flag;
+        }
+
         public async Task<List<OrderHistoryModel>> GetOrderHistory(string userName)
         {
             List<OrderHistoryModel> historyList = new List<OrderHistoryModel>();
@@ -639,10 +678,8 @@ namespace OrderService.Repository.Service
             try
             {
                 if (string.IsNullOrWhiteSpace(orderId))
-                    throw new ArgumentException("OrderId cannot be null or empty", nameof(orderId));
-
-                // ✅ Use your existing connection() function (same as GetOrder)
-                connection();
+                    throw new ArgumentException("OrderId cannot be empty", nameof(orderId));
+                      connection();
 
                 using (SqlCommand cmd = new SqlCommand(@"
             SELECT 
@@ -664,6 +701,7 @@ namespace OrderService.Repository.Service
     o.TableNo,
     o.OrderStatus,
     o.OrderType,
+	o.specialInstructions,
     o.payment_mode
 
 FROM OrderSummary s
@@ -700,7 +738,8 @@ ORDER BY o.Id ASC;
                                 HalfPortion = dr["HalfPortion"] != DBNull.Value ? Convert.ToInt32(dr["HalfPortion"]) : 0,
                                 TableNo = dr["TableNo"] != DBNull.Value ? Convert.ToInt32(dr["TableNo"]) : 0,
                                 ItemName = dr["ItemName"]?.ToString() ?? "",
-                                PaymentMode = dr["payment_mode"]?.ToString() ?? ""
+                                PaymentMode = dr["payment_mode"]?.ToString() ?? "",
+                                SpecialInstructions = dr["specialInstructions"]?.ToString() ?? ""
                             });
                         }
                     }
