@@ -709,7 +709,7 @@ INNER JOIN Orders o
     ON s.OrderId = o.OrderId
 LEFT JOIN menu_items mi              
     ON mi.item_id = o.item_id
-WHERE s.OrderId = @OrderId
+WHERE s.OrderId = @OrderId  AND o.OrderStatus = 4
 ORDER BY o.Id ASC;
 
         ", con))
