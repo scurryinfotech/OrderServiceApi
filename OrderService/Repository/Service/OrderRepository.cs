@@ -856,6 +856,7 @@ ORDER BY o.Id ASC;
                                 specialInstructions = dr["specialInstructions"] == DBNull.Value ? string.Empty : dr["specialInstructions"].ToString(),
                                 userId = dr["userId"] == DBNull.Value ? string.Empty : dr["userId"].ToString(),
                                 IsActive = dr["IsActive"] == DBNull.Value? 0 : Convert.ToInt32(dr["IsActive"]),
+                                Discount = dr["DiscountAmount"] == DBNull.Value ? string.Empty : dr["DiscountAmount"].ToString()
                             };
                             orderList.Add(order);
                         }

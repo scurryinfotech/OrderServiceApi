@@ -24,5 +24,5 @@ public class OrderListModel
     public string? paymentMode { get; set; }
     public DateTime?CreatedDate { get; set; }
     public string? specialInstructions { get; set; }
-
+    public string? Discount { get; internal set; }
 }
