@@ -1334,12 +1334,37 @@ ORDER BY o.Id ASC;
 
             return flag;
         }
+        public async Task<bool> CheckPhoneExists(string phone)
+        {
+            try
+            {
+                connection();
+
+                using var cmd = new SqlCommand("sp_CheckPhoneExists", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@Phone", phone);
+
+                var output = new SqlParameter("@Exists", SqlDbType.Bit)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(output);
+
+                await cmd.ExecuteNonQueryAsync();
+
+                return Convert.ToBoolean(output.Value);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+        }
+
+
 
     }
 
-    //public Task<List<GetOrderCoffeeDetails>> GetCoffeeOrdersDetails(string username)
-    //{
-    //    throw new NotImplementedException();
-    //}
     #endregion
 }

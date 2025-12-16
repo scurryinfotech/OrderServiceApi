@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using OrderService.Model;
 using OrderService.Repository.Interface;
 using OrderService.Repository.Service;
+using System.Reflection;
 
 namespace OrderService.Controllers
 {
@@ -328,6 +329,40 @@ namespace OrderService.Controllers
             });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPassword model)
+        {
+            if (model == null)
+            {
+                return BadRequest(new { message = "Invalid request" });
+            }
+            bool updated = await _oderRepository.ResetPasswordOnline(model.Phone, model.NewPassword);
+
+            if (updated)
+            {
+                return Ok(new { message = "Password reset successful" });
+            }
+            else
+            {
+                return StatusCode(500, new { message = "Failed to reset password" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckPhoneExists([FromQuery] string phone)
+        {
+            try
+            {
+                bool exists = await _oderRepository.CheckPhoneExists(phone);
+                return Ok(new { exists });
+            }
+            catch
+            {
+                return StatusCode(500, new { exists = false, message = "Server error" });
+            }
+        }
+
+
 
         #region Start for Online orders
         [HttpPost]
@@ -616,24 +651,7 @@ namespace OrderService.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPassword model)
-        {
-            if (model == null)
-            {
-                return BadRequest(new { message = "Invalid request" });
-            }
-            bool updated = await _oderRepository.ResetPasswordOnline(model.Phone, model.NewPassword);
-
-            if (updated)
-            {
-                return Ok(new { message = "Password reset successful" });
-            }
-            else
-            {
-                return StatusCode(500, new { message = "Failed to reset password" });
-            }
-        }
+       
 
         #endregion
 
