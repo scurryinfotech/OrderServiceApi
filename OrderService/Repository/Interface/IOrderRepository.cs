@@ -33,5 +33,6 @@ namespace OrderService.Repository.Interface
         Task<bool> InsertOrderSummaryOnline(OrderSummaryModel summary);
         Task<bool> GetAvailabilityOnline();
         Task<bool> UpdateTableOrderStatus(OrderListModel updatedTableOrders);
+        Task<bool> CheckPhoneExists(string phone);
     }
 }
