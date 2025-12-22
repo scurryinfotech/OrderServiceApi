@@ -34,5 +34,6 @@ namespace OrderService.Repository.Interface
         Task<bool> GetAvailabilityOnline();
         Task<bool> UpdateTableOrderStatus(OrderListModel updatedTableOrders);
         Task<bool> CheckPhoneExists(string phone);
+        Task<string?> GetCustomerAddressOnline(string userId);
     }
 }

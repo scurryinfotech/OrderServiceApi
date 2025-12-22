@@ -17,7 +17,6 @@ namespace OrderService.Repository.Service
         private object _configuration;
 
         //private IUserRepository _userRepository;
-
         public OrderRepository(IConfiguration _configuration)
         {
             Configuration = _configuration;
@@ -32,7 +31,7 @@ namespace OrderService.Repository.Service
                 con.Open();
             }
         }
-        
+
         public int GetTableCount(string userName)
         {
             int tableCount = 0;
@@ -96,10 +95,10 @@ namespace OrderService.Repository.Service
                                 ModifiedDate = dr["ModifiedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["ModifiedDate"]),
                                 customerName = dr["customerName"] == DBNull.Value ? string.Empty : dr["customerName"].ToString(),
                                 phone = dr["phone"] == DBNull.Value ? string.Empty : dr["phone"].ToString(),
-                                OrderType = dr["OrderType"] == DBNull.Value ? string .Empty: dr["OrderType"].ToString(),
+                                OrderType = dr["OrderType"] == DBNull.Value ? string.Empty : dr["OrderType"].ToString(),
                                 Address = dr["Address"] == DBNull.Value ? string.Empty : dr["Address"].ToString(),
                                 CreatedDate = dr["CreatedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["CreatedDate"]),
-                                specialInstructions = dr["specialInstructions"] == DBNull.Value? string.Empty : dr["specialInstructions"].ToString(),
+                                specialInstructions = dr["specialInstructions"] == DBNull.Value ? string.Empty : dr["specialInstructions"].ToString(),
                                 paymentMode = dr.Table.Columns.Contains("payment_mode") && dr["payment_mode"] != DBNull.Value ? dr["payment_mode"].ToString() : string.Empty,
                                 IsActive = dr["IsActive"] == DBNull.Value ? 0 : Convert.ToInt32(dr["IsActive"]),
                             };
@@ -233,20 +232,36 @@ namespace OrderService.Repository.Service
                         {
                             ItemId = Convert.ToInt32(row["item_id"]),
                             SubcategoryId = Convert.ToInt32(row["subcategory_id"]),
-                            ItemName = row["item_name"].ToString(),
-                            Description = row["description"].ToString(),
-                            ImageSrc = row["image_data"].ToString(),
-                            Price1 = Convert.ToDecimal(row["price1"]),
-                            Price2 = Convert.ToDecimal(row["price2"]),
-                            Count1 = Convert.ToInt32(row["count1"]),
-                            Count2 = Convert.ToInt32(row["count2"]),
-                            Title = row["title"].ToString(),
+
+                            ItemName = row["item_name"]?.ToString(),
+
+                            Description = row["description"] == DBNull.Value? null: row["description"].ToString(),
+
+                            ImageSrc = row["image_data"] == DBNull.Value ? null: row["image_data"].ToString(),
+
+                            ImagePath = row["image_path"] == DBNull.Value ? null: row["image_path"].ToString(),
+
+                            Price1 = row["price1"] == DBNull.Value? 0: Convert.ToDecimal(row["price1"]),
+
+                            Price2 = row["price2"] == DBNull.Value? 0: Convert.ToDecimal(row["price2"]),
+
+                            Count1 = row["count1"] == DBNull.Value? 0: Convert.ToInt32(row["count1"]),
+
+                            Count2 = row["count2"] == DBNull.Value? 0: Convert.ToInt32(row["count2"]),
+
+                            Title = row["title"] == DBNull.Value? null: row["title"].ToString(),
+
                             CreatedDate = Convert.ToDateTime(row["CreatedDate"]),
-                            CreatedBy = row["CreatedBy"].ToString(),
+
+                            CreatedBy = row["CreatedBy"] == DBNull.Value? null : row["CreatedBy"].ToString(),
+
                             ModifiedDate = row["ModifiedDate"] == DBNull.Value ? null : (DateTime?)Convert.ToDateTime(row["ModifiedDate"]),
-                            ModifiedBy = row["ModifiedBy"].ToString(),
+
+                            ModifiedBy = row["ModifiedBy"] == DBNull.Value ? null : row["ModifiedBy"].ToString(),
+
                             IsActive = Convert.ToBoolean(row["IsActive"])
                         });
+
                     }
                 }
             }
@@ -340,6 +355,41 @@ namespace OrderService.Repository.Service
             }
             return flag;
         }
+
+        public async Task<string> GetCustomerAddressOnline(string? userId)
+        {
+            try
+            {
+                connection();
+
+                using var cmd = new SqlCommand("sp_GetCustomerAddress", con)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@UserId", string.IsNullOrEmpty(userId) ? (object)DBNull.Value : userId);
+
+                if (con.State == ConnectionState.Closed)
+                    con.Open();
+
+                var result = await cmd.ExecuteScalarAsync();
+                if (result == null || result == DBNull.Value)
+                    return null;
+
+                return result.ToString()?.Trim();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in GetCustomerAddressOnline: " + ex.Message);
+                return null;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+        }
+
 
         public async Task<Tuple<bool, string, int>> IsAuthenticated(string username, string password)
         {
@@ -453,7 +503,7 @@ namespace OrderService.Repository.Service
                     CommandType = CommandType.StoredProcedure
                 };
 
-                cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar,50).Value = updatedOrders.OrderId;          
+                cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 50).Value = updatedOrders.OrderId;
                 cmd.Parameters.Add("@StatusId", SqlDbType.Int).Value = updatedOrders.OrderStatusId;
                 cmd.Parameters.Add("@Payment_mode", SqlDbType.NVarChar, 50).Value = updatedOrders.paymentMode ?? (object)DBNull.Value;
 
@@ -463,7 +513,7 @@ namespace OrderService.Repository.Service
                 };
                 cmd.Parameters.Add(rowsParam);
 
-               
+
                 _ = await cmd.ExecuteNonQueryAsync();
 
                 var rows = rowsParam.Value is int n ? n : 0;
@@ -529,7 +579,7 @@ namespace OrderService.Repository.Service
                 if (string.IsNullOrWhiteSpace(userName))
                     throw new ArgumentException("Username cannot be empty", nameof(userName));
 
-                
+
                 connection();
 
                 using (SqlCommand cmd = new SqlCommand("sp_GetOrderHistory", con))
@@ -623,7 +673,7 @@ namespace OrderService.Repository.Service
 
             return flag;
         }
-        
+
         public async Task<bool> InsertOrderSummaryOnline(OrderSummaryModel summary)
         {
             bool flag = false;
@@ -643,7 +693,7 @@ namespace OrderService.Repository.Service
                 cmd.Parameters.Add("@TotalAmount", SqlDbType.Decimal).Value = summary.TotalAmount;
                 cmd.Parameters.Add("@DiscountAmount", SqlDbType.Decimal).Value = summary.DiscountAmount;
                 cmd.Parameters.Add("@FinalAmount", SqlDbType.Decimal).Value = summary.FinalAmount;
-                cmd.Parameters.Add("@PaymentMode",SqlDbType.NVarChar, 20).Value = summary.PaymentMode;
+                cmd.Parameters.Add("@PaymentMode", SqlDbType.NVarChar, 20).Value = summary.PaymentMode;
 
                 // OUTPUT PARAMETER
                 var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
@@ -673,86 +723,58 @@ namespace OrderService.Repository.Service
 
         public async Task<List<OrderService.Model.OrderBillModel>> GetBillByOrderId(string orderId)
         {
-            List<OrderService.Model.OrderBillModel> list = new List<OrderService.Model.OrderBillModel>();
+            var list = new List<OrderService.Model.OrderBillModel>();
 
             try
             {
-                if (string.IsNullOrWhiteSpace(orderId))
-                    throw new ArgumentException("OrderId cannot be empty", nameof(orderId));
-                      connection();
+                connection();
 
-                using (SqlCommand cmd = new SqlCommand(@"
-            SELECT 
-    s.SummaryId,
-    s.OrderId,
-    s.CustomerName,
-    s.Phone,
-    s.TotalAmount,
-    s.DiscountAmount,
-    s.FinalAmount,
-    s.CreatedDate,
-    s.CompletedDate,
-
-    o.item_id,
-    mi.item_name AS ItemName,   
-    o.Price,
-    o.FullPortion,
-    o.HalfPortion,
-    o.TableNo,
-    o.OrderStatus,
-    o.OrderType,
-	o.specialInstructions,
-    o.payment_mode
-
-FROM OrderSummary s
-INNER JOIN Orders o 
-    ON s.OrderId = o.OrderId
-LEFT JOIN menu_items mi              
-    ON mi.item_id = o.item_id
-WHERE s.OrderId = @OrderId
-ORDER BY o.Id ASC;
-
-        ", con))
+                using var cmd = new SqlCommand("sp_GetBillByOrderId", con)
                 {
-                    cmd.CommandType = CommandType.Text;
-                    cmd.Parameters.AddWithValue("@OrderId", orderId);
+                    CommandType = CommandType.StoredProcedure
+                };
 
-                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 100).Value = orderId;
+
+                using var dr = await cmd.ExecuteReaderAsync();
+
+                while (await dr.ReadAsync())
+                {
+                    list.Add(new OrderService.Model.OrderBillModel
                     {
-                        while (await dr.ReadAsync())
-                        {
-                            list.Add(new OrderService.Model.OrderBillModel
-                            {
-                                SummaryId = dr["SummaryId"] != DBNull.Value ? Convert.ToInt32(dr["SummaryId"]) : 0,
-                                OrderId = dr["OrderId"]?.ToString() ?? "",
-                                CustomerName = dr["CustomerName"]?.ToString() ?? "",
-                                Phone = dr["Phone"]?.ToString() ?? "",
-                                TotalAmount = dr["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(dr["TotalAmount"]) : 0,
-                                DiscountAmount = dr["DiscountAmount"] != DBNull.Value ? Convert.ToDecimal(dr["DiscountAmount"]) : 0,
-                                FinalAmount = dr["FinalAmount"] != DBNull.Value ? Convert.ToDecimal(dr["FinalAmount"]) : 0,
-                                CreatedDate = dr["CreatedDate"] != DBNull.Value ? Convert.ToDateTime(dr["CreatedDate"]) : DateTime.MinValue,
-                                CompletedDate = dr["CompletedDate"] != DBNull.Value ? Convert.ToDateTime(dr["CompletedDate"]) : DateTime.MinValue,
-                                ItemId = dr["item_id"] != DBNull.Value ? Convert.ToInt32(dr["item_id"]) : 0,
-                                Price = dr["Price"] != DBNull.Value ? Convert.ToDecimal(dr["Price"]) : 0,
-                                FullPortion = dr["FullPortion"] != DBNull.Value ? Convert.ToInt32(dr["FullPortion"]) : 0,
-                                HalfPortion = dr["HalfPortion"] != DBNull.Value ? Convert.ToInt32(dr["HalfPortion"]) : 0,
-                                TableNo = dr["TableNo"] != DBNull.Value ? Convert.ToInt32(dr["TableNo"]) : 0,
-                                ItemName = dr["ItemName"]?.ToString() ?? "",
-                                PaymentMode = dr["payment_mode"]?.ToString() ?? "",
-                                SpecialInstructions = dr["specialInstructions"]?.ToString() ?? ""
-                            });
-                        }
-                    }
+                        SummaryId = dr["SummaryId"] != DBNull.Value ? Convert.ToInt32(dr["SummaryId"]) : 0,
+                        OrderId = dr["OrderId"]?.ToString() ?? "",
+                        CustomerName = dr["CustomerName"]?.ToString() ?? "",
+                        Phone = dr["Phone"]?.ToString() ?? "",
+
+                        TotalAmount = dr["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(dr["TotalAmount"]) : 0,
+                        DiscountAmount = dr["DiscountAmount"] != DBNull.Value ? Convert.ToDecimal(dr["DiscountAmount"]) : 0,
+                        FinalAmount = dr["FinalAmount"] != DBNull.Value ? Convert.ToDecimal(dr["FinalAmount"]) : 0,
+
+                        CreatedDate = dr["CreatedDate"] != DBNull.Value ? Convert.ToDateTime(dr["CreatedDate"]) : DateTime.MinValue,
+                        CompletedDate = dr["CompletedDate"] != DBNull.Value ? Convert.ToDateTime(dr["CompletedDate"]) : DateTime.MinValue,
+
+                        ItemId = dr["item_id"] != DBNull.Value ? Convert.ToInt32(dr["item_id"]) : 0,
+                        ItemName = dr["ItemName"]?.ToString() ?? "",
+                        Price = dr["Price"] != DBNull.Value ? Convert.ToDecimal(dr["Price"]) : 0,
+
+                        FullPortion = dr["FullPortion"] != DBNull.Value ? Convert.ToInt32(dr["FullPortion"]) : 0,
+                        HalfPortion = dr["HalfPortion"] != DBNull.Value ? Convert.ToInt32(dr["HalfPortion"]) : 0,
+                        TableNo = dr["TableNo"] != DBNull.Value ? Convert.ToInt32(dr["TableNo"]) : 0,
+
+                        PaymentMode = dr["payment_mode"]?.ToString() ?? "",
+                        SpecialInstructions = dr["specialInstructions"]?.ToString() ?? ""
+                    });
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                Console.WriteLine("Error fetching bill: " + ex.Message);
             }
             finally
             {
                 if (con.State == ConnectionState.Open)
-                    con.Close();   
+                    con.Close();
             }
 
             return list;
@@ -855,7 +877,7 @@ ORDER BY o.Id ASC;
                                 CreatedDate = dr["CreatedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["CreatedDate"]),
                                 specialInstructions = dr["specialInstructions"] == DBNull.Value ? string.Empty : dr["specialInstructions"].ToString(),
                                 userId = dr["userId"] == DBNull.Value ? string.Empty : dr["userId"].ToString(),
-                                IsActive = dr["IsActive"] == DBNull.Value? 0 : Convert.ToInt32(dr["IsActive"]),
+                                IsActive = dr["IsActive"] == DBNull.Value ? 0 : Convert.ToInt32(dr["IsActive"]),
                                 Discount = dr["DiscountAmount"] == DBNull.Value ? string.Empty : dr["DiscountAmount"].ToString()
                             };
                             orderList.Add(order);
@@ -984,7 +1006,7 @@ ORDER BY o.Id ASC;
                 };
                 cmd.Parameters.Add(rowsParam);
 
-                
+
                 _ = await cmd.ExecuteNonQueryAsync();
 
                 var rows = rowsParam.Value is int n ? n : 0;
@@ -1033,7 +1055,7 @@ ORDER BY o.Id ASC;
 
             try
             {
-                connection(); 
+                connection();
                 SqlCommand cmd = new SqlCommand("SELECT SettingValue FROM AppSettings WHERE SettingKey = 'IsOrderingAvailable'", con);
                 cmd.CommandType = CommandType.Text;
 
@@ -1050,7 +1072,7 @@ ORDER BY o.Id ASC;
             catch (Exception ex)
             {
                 Console.WriteLine("Error checking availability: " + ex.Message);
-                
+
             }
             finally
             {
@@ -1064,7 +1086,7 @@ ORDER BY o.Id ASC;
         {
             try
             {
-                connection(); 
+                connection();
                 SqlCommand cmd = new SqlCommand(
                     "UPDATE AppSettings SET SettingValue = @value WHERE SettingKey = 'IsOrderingAvailableOnline'", con);
                 cmd.CommandType = CommandType.Text;
@@ -1111,12 +1133,12 @@ ORDER BY o.Id ASC;
                             Description = row["Description"].ToString(),
                             Image = row["Image"].ToString(),
                             ImageUrl = row["ImageUrl"] == DBNull.Value ? null : row["ImageUrl"].ToString(),
-                            Price = row["Price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["Price"]),                           
+                            Price = row["Price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["Price"]),
                             CreatedDate = (DateTime)(row["CreatedDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(row["CreatedDate"])),
                             IsActive = row["IsActive"] != DBNull.Value && Convert.ToBoolean(row["IsActive"])
 
                         });
-                        
+
                     }
                 }
                 return itemList;
@@ -1127,7 +1149,7 @@ ORDER BY o.Id ASC;
                 Console.WriteLine("Error: " + ex.Message);
 
                 return itemList;
-               
+
             }
             finally
             {
@@ -1229,7 +1251,7 @@ ORDER BY o.Id ASC;
                             Quantity = row["Quantity"] == DBNull.Value ? 0 : Convert.ToInt32(row["Quantity"]),
                             Price = row["Price"] == DBNull.Value ? 0 : Convert.ToDecimal(row["Price"]),
                             TotalPrice = row["TotalPrice"] == DBNull.Value ? 0 : Convert.ToDecimal(row["TotalPrice"])
-                        
+
 
                         });
 
@@ -1243,9 +1265,9 @@ ORDER BY o.Id ASC;
                 Console.WriteLine("Error: " + ex.Message);
 
                 return itemList;
-                
+
             }
-            
+
             finally
             {
                 if (con.State == ConnectionState.Open)
@@ -1267,7 +1289,7 @@ ORDER BY o.Id ASC;
 
                 cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 50).Value = updatedOrders.orderId;
                 cmd.Parameters.Add("@StatusId", SqlDbType.Int).Value = updatedOrders.status;
-                
+
 
                 var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
                 {
@@ -1303,7 +1325,7 @@ ORDER BY o.Id ASC;
 
             try
             {
-                connection(); 
+                connection();
 
                 using var cmd = new SqlCommand("sp_ResetPassword", con)
                 {
@@ -1317,7 +1339,7 @@ ORDER BY o.Id ASC;
                     Direction = ParameterDirection.Output
                 };
                 cmd.Parameters.Add(rowsParam);
-               
+
                 await cmd.ExecuteNonQueryAsync();
 
                 int rows = rowsParam.Value is int n ? n : 0;
@@ -1362,7 +1384,6 @@ ORDER BY o.Id ASC;
                     con.Close();
             }
         }
-
 
 
     }

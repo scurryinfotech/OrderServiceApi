@@ -72,6 +72,7 @@ namespace OrderService.Repository.Service
                         {
                             loginame = reader["loginame"].ToString(),
                             Password = reader["Password"].ToString(),
+                            Address = reader["Address"] == DBNull.Value ? "null" : reader["Address"].ToString(),
                             Name = reader["Name"].ToString(),
                             CreatedDate = reader["CreatedDate"] as DateTime?,
                             IsActive = reader["IsActive"] as bool?

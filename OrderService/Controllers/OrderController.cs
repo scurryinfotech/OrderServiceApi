@@ -7,6 +7,7 @@ using OrderService.Model;
 using OrderService.Repository.Interface;
 using OrderService.Repository.Service;
 using System.Reflection;
+using System.Security.Claims;
 
 namespace OrderService.Controllers
 {
@@ -18,6 +19,7 @@ namespace OrderService.Controllers
     {
         private IOrderRepository _oderRepository;
         private IUserRepository _userRepository;
+        //private object _orderRepository;
         private readonly IConfiguration _configuration;
 
         private readonly IJwtService _jwtService;
@@ -324,7 +326,7 @@ namespace OrderService.Controllers
                 },
                 token = token,
                 expires = expiry,
-                Name = user.Name
+                Name = user.Name,
 
             });
         }
@@ -362,7 +364,27 @@ namespace OrderService.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetCustomerAddress(string userId)
+        {
 
+            var address = await _oderRepository.GetCustomerAddressOnline(userId); 
+
+            if (address == null)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Address not found"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                address
+            });
+        }
 
         #region Start for Online orders
         [HttpPost]
