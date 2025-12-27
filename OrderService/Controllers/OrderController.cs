@@ -673,10 +673,26 @@ namespace OrderService.Controllers
             }
         }
 
-       
+
 
         #endregion
 
 
+
+        [HttpGet]
+        public async Task<IActionResult> GetFixedDiscount()
+        {
+
+
+            try
+            {
+                int isDiscount = await _oderRepository.GetFixedDiscountAsync();
+                return Ok(isDiscount);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 }
