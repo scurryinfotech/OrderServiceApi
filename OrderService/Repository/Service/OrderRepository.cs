@@ -779,7 +779,38 @@ namespace OrderService.Repository.Service
 
             return list;
         }
+        public async Task<int> GetFixedDiscountAsync()
+        {
+            int discount = 0;
+            try
+            {
+                connection();
+                using var cmd = new SqlCommand("Sp_getFixedDiscount", con);
+                cmd.CommandType = CommandType.StoredProcedure;
 
+                if (con.State == ConnectionState.Closed)
+                    await con.OpenAsync();
+
+                var result = await cmd.ExecuteScalarAsync();
+
+                if (result != null && result != DBNull.Value)
+                {
+                    discount = Convert.ToInt32(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching fixed discount: " + ex.Message);
+                discount = 0;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+
+            return discount;
+        }
         #region 
         public async Task<bool> GetAvailabilityOnline()
         {
