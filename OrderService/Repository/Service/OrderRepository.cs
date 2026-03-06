@@ -1054,6 +1054,29 @@ namespace OrderService.Repository.Service
             }
             return flag;
         }
+        public async Task<bool> RejectCoffeeOrder(string OrderId)
+        {
+            bool flag = false;
+
+            try
+            {
+                connection();
+                SqlCommand cmd = new SqlCommand("sp_SoftDeleteCoffee", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@OrderId", OrderId);
+                int i = await cmd.ExecuteNonQueryAsync();
+                if (i > 0)
+                {
+                    flag = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+
+            return flag;
+        }
         public async Task<bool> RejectOnlineOrder(string OrderId)
         {
             bool flag = false;
@@ -1201,7 +1224,7 @@ namespace OrderService.Repository.Service
                     SqlCommand cmdOrder = new SqlCommand(@"
                 INSERT INTO CoffeeOrders (OrderNumber, CustomerName, FloorNo, RoomNo, TotalAmount, OrderStatus, CustomerPhone)
                 OUTPUT INSERTED.OrderId
-                VALUES (@OrderNumber, @CustomerName, @FloorNo, @RoomNo, @TotalAmount, '1', @CustomerPhone);
+                VALUES (@OrderNumber, @CustomerName, @FloorNo, @RoomNo, @TotalAmount, '2', @CustomerPhone);
             ", con, transaction);
 
                     // Generate unique order number like ORD20251015001
@@ -1277,6 +1300,7 @@ namespace OrderService.Repository.Service
                             CustomerName = row["CustomerName"]?.ToString(),
                             CustomerPhone = row["CustomerPhone"]?.ToString(),
                             OrderDate = (DateTime)(row["OrderDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(row["OrderDate"])),
+                            OrderStatus = row["OrderStatus"]?.ToString(),
                             CoffeeName = row["CoffeeName"]?.ToString(),
                             Description = row["Description"]?.ToString(),
                             Quantity = row["Quantity"] == DBNull.Value ? 0 : Convert.ToInt32(row["Quantity"]),
@@ -1313,13 +1337,13 @@ namespace OrderService.Repository.Service
             try
             {
                 connection();
-                using var cmd = new SqlCommand("sp_UpdateOrderStatus", con)
+                using var cmd = new SqlCommand("sp_UpdateCoffeeOrderStatus", con)
                 {
                     CommandType = CommandType.StoredProcedure
                 };
 
-                cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 50).Value = updatedOrders.orderId;
-                cmd.Parameters.Add("@StatusId", SqlDbType.Int).Value = updatedOrders.status;
+                cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 50).Value = updatedOrders.OrderId;
+                cmd.Parameters.Add("@StatusId", SqlDbType.Int).Value = updatedOrders.Status;
 
 
                 var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)

@@ -29,6 +29,7 @@ namespace OrderService.Repository.Interface
         Task GetOrderOrderHistoryDash(string username);
         Task<List<OrderHistoryModel>> GetOrderHistory(string username);
         Task<bool> RejectOnlineOrder(string orderId);
+        Task<bool> RejectCoffeeOrder(string orderId);
         Task<bool> ResetPasswordOnline(string phone, string newPassword);
         Task<bool> InsertOrderSummaryOnline(OrderSummaryModel summary);
         Task<bool> GetAvailabilityOnline();

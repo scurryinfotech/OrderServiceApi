@@ -1,8 +1,12 @@
-﻿namespace OrderService.Model
+﻿using System.Text.Json.Serialization;
+namespace OrderService.Model
 {
     public class updateCoffeeDetails
     {
-        public string orderId { get; set; }
-        public int status { get; set; }
+        [JsonPropertyName("orderId")]
+        public string OrderId { get; set; }
+
+        [JsonPropertyName("status")]
+        public int Status { get; set; }
     }
 }

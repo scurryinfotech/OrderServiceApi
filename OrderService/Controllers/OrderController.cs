@@ -644,9 +644,12 @@ namespace OrderService.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateCoffeeOrder([FromBody] updateCoffeeDetails updatedOrders)
         {
-            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            if (!_jwtService.ValidateToken(token))
-                return Unauthorized();
+            if (updatedOrders == null)
+            {
+                Console.WriteLine("UpdateCoffeeOrder: request body was null or invalid JSON");
+                return BadRequest("Invalid request body");
+            }
+
             bool result = await _oderRepository.UpdateCoffeeOrderStatus(updatedOrders);
             if (result)
                 return Ok();
@@ -654,6 +657,16 @@ namespace OrderService.Controllers
                 return StatusCode(500, "Failed to update coffee order items");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> RejectCoffeeOrder([FromBody] string OrderId)
+        {
+
+            bool result = await _oderRepository.RejectCoffeeOrder(OrderId);
+            if (result)
+                return Ok();
+            else
+                return StatusCode(500, "Failed to soft delete order");
+        }
 
         [HttpGet("CheckDbConnection")]
         public IActionResult CheckDbConnection([FromServices] IConfiguration config)
