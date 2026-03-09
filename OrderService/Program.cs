@@ -44,6 +44,10 @@ builder.Services.AddControllers()
 builder.Services.AddTransient<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddTransient<IStaffRepository, StaffRepository>();
+builder.Services.AddTransient<IShopExpenseRepository, ShopExpenseRepository>();
+builder.Services.AddTransient<IDailyExpenseRepository, DailyExpenseRepository>();
 
 builder.Services.AddMemoryCache();
 
@@ -76,5 +80,15 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+using var scope = app.Services.CreateScope();
+try
+{
+    scope.ServiceProvider.GetRequiredService<IRoleRepository>();
+}
+catch (Exception ex)
+{
+    Console.WriteLine("DI resolution failed: " + ex);
+    throw;
+}
 
 app.Run();

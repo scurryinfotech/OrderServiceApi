@@ -239,7 +239,7 @@ namespace OrderService.Repository.Service
 
                             ImageSrc = row["image_data"] == DBNull.Value ? null: row["image_data"].ToString(),
 
-                            ImagePath = row["image_path"] == DBNull.Value ? null: row["image_path"].ToString(),
+                            //ImagePath = row["image_path"] == DBNull.Value ? null: row["image_path"].ToString(),
 
                             Price1 = row["price1"] == DBNull.Value? 0: Convert.ToDecimal(row["price1"]),
 
