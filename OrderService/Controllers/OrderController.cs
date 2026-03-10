@@ -631,10 +631,7 @@ namespace OrderService.Controllers
             if (_jwtService.ValidateToken(token))
             {
                 var Orders = await _oderRepository.GetCoffeeOrdersDetails(username);
-                if (Orders.Count == 0)
-                    return Ok();
-
-                else
+               
                     return Ok(Orders);
             }
             else
