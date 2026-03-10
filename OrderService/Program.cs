@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using OrderService.Repository.Interface;
 using OrderService.Repository.Service;
+using OrderService.Repository.Service;
 using System.Text;
 
 
@@ -48,6 +49,11 @@ builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddTransient<IStaffRepository, StaffRepository>();
 builder.Services.AddTransient<IShopExpenseRepository, ShopExpenseRepository>();
 builder.Services.AddTransient<IDailyExpenseRepository, DailyExpenseRepository>();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+builder.Services.AddScoped<IPayrollRepository, PayrollRepository>();
+builder.Services.AddScoped<ISalaryDashboardRepository, SalaryDashboardRepository>();
+builder.Services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
+
 
 builder.Services.AddMemoryCache();
 
