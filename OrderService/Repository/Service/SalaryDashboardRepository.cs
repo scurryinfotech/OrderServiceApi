@@ -2,6 +2,7 @@
 using OrderService.Model;
 
 using OrderService.Repository.Interface;
+using Twilio.TwiML.Messaging;
 
 
 namespace OrderService.Repository.Service
@@ -67,30 +68,38 @@ namespace OrderService.Repository.Service
         // ── Dashboard Summary ───────────────────────────────────────
         public async Task<DashboardSummary?> GetSummaryAsync(int month, int year)
         {
-            await using var con = new SqlConnection(_cs);
-            await con.OpenAsync();
-
-            var cmd = Proc(con, "sp_GetSalaryDashboardSummary");
-
-            cmd.Parameters.AddWithValue("@PayMonth", month);
-            cmd.Parameters.AddWithValue("@PayYear", year);
-
-            await using var rdr = await cmd.ExecuteReaderAsync();
-
-            if (!await rdr.ReadAsync())
-                return null;
-
-            return new DashboardSummary
+            try
             {
-                TotalEmployees = I(rdr, "TotalEmployees"),
-                TotalPayroll = D(rdr, "TotalPayroll"),
-                TotalPaid = D(rdr, "TotalPaid"),
-                TotalPending = D(rdr, "TotalPending"),
+                await using var con = new SqlConnection(_cs);
+                await con.OpenAsync();
 
-                PaidCount = I(rdr, "PaidCount"),
-                PartialCount = I(rdr, "PartialCount"),
-                PendingCount = I(rdr, "PendingCount")
-            };
+                var cmd = Proc(con, "sp_GetSalaryDashboardSummary");
+
+                cmd.Parameters.AddWithValue("@PayMonth", month);
+                cmd.Parameters.AddWithValue("@PayYear", year);
+
+                await using var rdr = await cmd.ExecuteReaderAsync();
+
+                if (!await rdr.ReadAsync())
+                    return null;
+
+                return new DashboardSummary
+                {
+                    TotalEmployees = I(rdr, "TotalEmployees"),
+                    TotalPayroll = D(rdr, "TotalPayroll"),
+                    TotalPaid = D(rdr, "TotalPaid"),
+                    TotalPending = D(rdr, "TotalPending"),
+
+                    PaidCount = I(rdr, "PaidCount"),
+                    PartialCount = I(rdr, "PartialCount"),
+                    PendingCount = I(rdr, "PendingCount")
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
         }
 
         // ── Generate Payroll ────────────────────────────────────────

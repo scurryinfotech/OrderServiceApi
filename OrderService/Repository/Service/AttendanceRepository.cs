@@ -26,8 +26,8 @@ namespace OrderService.Repository.Service
             FullName = r.IsDBNull(r.GetOrdinal("FullName")) ? null : r.GetString(r.GetOrdinal("FullName")),
             AttendanceDate = r.GetDateTime(r.GetOrdinal("AttendanceDate")),
             Status = r.GetString(r.GetOrdinal("Status")),
-            CheckIn = r.IsDBNull(r.GetOrdinal("CheckIn")) ? null : r.GetValue(r.GetOrdinal("CheckIn"))?.ToString(),
-            CheckOut = r.IsDBNull(r.GetOrdinal("CheckOut")) ? null : r.GetValue(r.GetOrdinal("CheckOut"))?.ToString(),
+            CheckIn = r["CheckIn"] == DBNull.Value ? (TimeSpan?)null : (TimeSpan)r["CheckIn"],
+            CheckOut = r["CheckOut"] == DBNull.Value ? (TimeSpan?)null : (TimeSpan)r["CheckOut"],
             OvertimeHours = r.GetDecimal(r.GetOrdinal("OvertimeHours")),
             Notes = r.IsDBNull(r.GetOrdinal("Notes")) ? null : r.GetString(r.GetOrdinal("Notes")),
             CreatedAt = r.GetDateTime(r.GetOrdinal("CreatedAt")),
@@ -158,8 +158,13 @@ namespace OrderService.Repository.Service
                     StaffId = rdr.GetInt32(rdr.GetOrdinal("StaffId")),
                     AttendanceDate = rdr.GetDateTime(rdr.GetOrdinal("AttendanceDate")),
                     Status = rdr.IsDBNull(rdr.GetOrdinal("Status")) ? null : rdr.GetString(rdr.GetOrdinal("Status")),
-                    CheckIn = rdr.IsDBNull(rdr.GetOrdinal("CheckIn")) ? null : rdr.GetString(rdr.GetOrdinal("CheckIn")),
-                    CheckOut = rdr.IsDBNull(rdr.GetOrdinal("CheckOut")) ? null : rdr.GetString(rdr.GetOrdinal("CheckOut")),
+                               CheckIn = rdr.IsDBNull(rdr.GetOrdinal("CheckIn"))
+                     ? (TimeSpan?)null
+                     : rdr.GetTimeSpan(rdr.GetOrdinal("CheckIn")),
+                    
+                               CheckOut = rdr.IsDBNull(rdr.GetOrdinal("CheckOut"))
+                      ? (TimeSpan?)null
+                      : rdr.GetTimeSpan(rdr.GetOrdinal("CheckOut")),
                     OvertimeHours = rdr.IsDBNull(rdr.GetOrdinal("OvertimeHours")) ? 0m : rdr.GetDecimal(rdr.GetOrdinal("OvertimeHours")),
                     Notes = rdr.IsDBNull(rdr.GetOrdinal("Notes")) ? null : rdr.GetString(rdr.GetOrdinal("Notes")),
                     IsActive = rdr.GetBoolean(rdr.GetOrdinal("IsActive")),
