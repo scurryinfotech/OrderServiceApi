@@ -78,7 +78,7 @@ namespace OrderService.Repository.Service
 
             emp.PayrollBreakdown = payrollBalances;
 
-            // ── Result Set 3 : Total Outstanding ─────────────────────
+       
             await rdr.NextResultAsync();
 
             if (await rdr.ReadAsync())
