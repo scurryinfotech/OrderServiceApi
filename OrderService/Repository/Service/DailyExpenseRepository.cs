@@ -19,6 +19,7 @@ namespace OrderService.Repository.Service
             Amount = r.GetDecimal(r.GetOrdinal("Amount")),
             ExpenseDate = r.GetDateTime(r.GetOrdinal("ExpenseDate")),
             PaidBy = r.IsDBNull(r.GetOrdinal("PaidBy")) ? null : r.GetString(r.GetOrdinal("PaidBy")),
+            PaymentMode = r.IsDBNull(r.GetOrdinal("PaymentMode")) ? null : r.GetString(r.GetOrdinal("PaymentMode")),
             Notes = r.IsDBNull(r.GetOrdinal("Notes")) ? null : r.GetString(r.GetOrdinal("Notes")),
             IsActive = r.GetBoolean(r.GetOrdinal("IsActive")),
             IsDeleted = r.GetBoolean(r.GetOrdinal("IsDeleted")),
@@ -51,6 +52,7 @@ namespace OrderService.Repository.Service
             cmd.Parameters.AddWithValue("@Category", (object?)req.Category ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Amount", req.Amount);
             cmd.Parameters.AddWithValue("@ExpenseDate", req.ExpenseDate);
+            cmd.Parameters.AddWithValue("@PaymentMode",req.PaymentMode);
             cmd.Parameters.AddWithValue("@PaidBy", (object?)req.PaidBy ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Notes", (object?)req.Notes ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@IsActive", req.IsActive);
@@ -68,6 +70,7 @@ namespace OrderService.Repository.Service
             cmd.Parameters.AddWithValue("@Category", (object?)req.Category ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Amount", req.Amount);
             cmd.Parameters.AddWithValue("@ExpenseDate", req.ExpenseDate);
+            cmd.Parameters.AddWithValue("@PaymentMode", req.PaymentMode); 
             cmd.Parameters.AddWithValue("@PaidBy", (object?)req.PaidBy ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Notes", (object?)req.Notes ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@IsActive", req.IsActive);

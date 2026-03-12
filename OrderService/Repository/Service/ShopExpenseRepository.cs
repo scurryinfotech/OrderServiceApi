@@ -17,10 +17,12 @@ namespace OrderService.Repository.Service
             Category = r.IsDBNull(r.GetOrdinal("Category")) ? null : r.GetString(r.GetOrdinal("Category")),
             Amount = r.GetDecimal(r.GetOrdinal("Amount")),
             ExpenseDate = r.GetDateTime(r.GetOrdinal("ExpenseDate")),
+            
             Description = r.IsDBNull(r.GetOrdinal("Description")) ? null : r.GetString(r.GetOrdinal("Description")),
             IsActive = r.GetBoolean(r.GetOrdinal("IsActive")),
             IsDeleted = r.GetBoolean(r.GetOrdinal("IsDeleted")),
             CreatedAt = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+            PaymentMode = r.GetString(r.GetOrdinal("PaymentMode")),
         };
 
         public async Task<IEnumerable<ShopExpense>> GetAllAsync()
@@ -52,6 +54,7 @@ namespace OrderService.Repository.Service
             cmd.Parameters.AddWithValue("@Description", (object?)req.Description ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@IsActive", req.IsActive);
             cmd.Parameters.AddWithValue("@ModifiedBy", req.ModifiedBy);
+            cmd.Parameters.AddWithValue("@PaymentMode", req.PaymentMode);
             await cmd.ExecuteNonQueryAsync();
             return 1;
         }
@@ -68,6 +71,7 @@ namespace OrderService.Repository.Service
             cmd.Parameters.AddWithValue("@Description", (object?)req.Description ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@IsActive", req.IsActive);
             cmd.Parameters.AddWithValue("@ModifiedBy", req.ModifiedBy);
+            cmd.Parameters.AddWithValue("@PaymentMode", req.PaymentMode);
             await cmd.ExecuteNonQueryAsync();
         }
 
