@@ -6,5 +6,8 @@
         public int OrderStatus { get; set; }
 
         public string? paymentMode { get; set; }
+
+        public int? DeliveryStaffId { get; set; }
+
     }
 }

@@ -26,16 +26,30 @@ namespace OrderService.Repository.Service
             IsActive = r.GetBoolean(r.GetOrdinal("IsActive")),
             IsDeleted = r.GetBoolean(r.GetOrdinal("IsDeleted")),
             CreatedAt = r.GetDateTime(r.GetOrdinal("CreatedAt")),
+            AvalFDelivery = r.GetBoolean(r.GetOrdinal("AvalfDelivery")),
         };
 
         public async Task<IEnumerable<Staff>> GetAllStaffAsync()
         {
-            var list = new List<Staff>();
-            await using var con = new SqlConnection(_cs); await con.OpenAsync();
-            var cmd = DbHelper.Proc(con, "sp_GetAllStaff");
-            await using var rdr = await cmd.ExecuteReaderAsync();
-            while (await rdr.ReadAsync()) list.Add(MapStaff(rdr));
-            return list;
+            try
+            {
+                var list = new List<Staff>();
+                await using var con = new SqlConnection(_cs);
+                await con.OpenAsync();
+
+                var cmd = DbHelper.Proc(con, "sp_GetAllStaff");
+                await using var rdr = await cmd.ExecuteReaderAsync();
+
+                while (await rdr.ReadAsync())
+                    list.Add(MapStaff(rdr));
+
+                return list;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
         }
 
         public async Task<Staff?> GetStaffByIdAsync(int staffId)
