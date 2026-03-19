@@ -25,4 +25,7 @@ public class OrderListModel
     public DateTime?CreatedDate { get; set; }
     public string? specialInstructions { get; set; }
     public string? Discount { get; internal set; }
+
+    public string? DeliveryName { get; set; }
+    public string? DeliveryPhone { get; set; }
 }

@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Microsoft.IdentityModel.Tokens;
 using OrderService.Repository.Interface;
-using OrderService.Repository.Service;
-using System;
-using System.Data;
-using System.Threading.Channels;
 
 namespace OrderService.Controllers
 {

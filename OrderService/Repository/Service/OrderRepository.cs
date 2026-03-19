@@ -356,7 +356,7 @@ namespace OrderService.Repository.Service
             return flag;
         }
 
-        public async Task<string> GetCustomerAddressOnline(string? userId)
+        public async Task<CustomerAddressDto?> GetCustomerAddressOnline(string? userId)
         {
             try
             {
@@ -367,16 +367,24 @@ namespace OrderService.Repository.Service
                     CommandType = CommandType.StoredProcedure
                 };
 
-                cmd.Parameters.AddWithValue("@UserId", string.IsNullOrEmpty(userId) ? (object)DBNull.Value : userId);
+                cmd.Parameters.Add("@UserId", SqlDbType.Int)
+                   .Value = string.IsNullOrEmpty(userId) ? (object)DBNull.Value : int.Parse(userId);
 
                 if (con.State == ConnectionState.Closed)
                     con.Open();
 
-                var result = await cmd.ExecuteScalarAsync();
-                if (result == null || result == DBNull.Value)
-                    return null;
+                using var reader = await cmd.ExecuteReaderAsync();
 
-                return result.ToString()?.Trim();
+                if (await reader.ReadAsync())
+                {
+                    return new CustomerAddressDto
+                    {
+                        CustomerName = reader["customerName"]?.ToString(),
+                        Address = reader["Address"]?.ToString()
+                    };
+                }
+
+                return null;
             }
             catch (Exception ex)
             {
@@ -506,6 +514,7 @@ namespace OrderService.Repository.Service
                 cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 50).Value = updatedOrders.OrderId;
                 cmd.Parameters.Add("@StatusId", SqlDbType.Int).Value = updatedOrders.OrderStatusId;
                 cmd.Parameters.Add("@Payment_mode", SqlDbType.NVarChar, 50).Value = updatedOrders.paymentMode ?? (object)DBNull.Value;
+                
 
                 var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
                 {
@@ -909,7 +918,9 @@ namespace OrderService.Repository.Service
                                 specialInstructions = dr["specialInstructions"] == DBNull.Value ? string.Empty : dr["specialInstructions"].ToString(),
                                 userId = dr["userId"] == DBNull.Value ? string.Empty : dr["userId"].ToString(),
                                 IsActive = dr["IsActive"] == DBNull.Value ? 0 : Convert.ToInt32(dr["IsActive"]),
-                                Discount = dr["DiscountAmount"] == DBNull.Value ? string.Empty : dr["DiscountAmount"].ToString()
+                                Discount = dr["DiscountAmount"] == DBNull.Value ? string.Empty : dr["DiscountAmount"].ToString(),
+                                DeliveryName = dr["DeliveryName"] == DBNull.Value ? string.Empty : dr["DeliveryName"].ToString(),
+                                DeliveryPhone = dr["DeliveryPhone"] == DBNull.Value ? string.Empty : dr["DeliveryPhone"].ToString(),
                             };
                             orderList.Add(order);
                         }
@@ -1017,31 +1028,42 @@ namespace OrderService.Repository.Service
         public async Task<bool> UpdateOnlineStatus(OnlineOrderModel updatedOrders)
         {
             bool flag = false;
+
             try
             {
                 connection();
-                using var cmd = new SqlCommand("sp_UpdateOrderStatus", con)
+
+                using (var cmd = new SqlCommand("sp_UpdateOrderStatus", con))
                 {
-                    CommandType = CommandType.StoredProcedure
-                };
+                    cmd.CommandType = CommandType.StoredProcedure;
 
-                //cmd.Parameters.Add("@OrderId", SqlDbType.Int).Value = updatedOrders.OrderId;
-                //cmd.Parameters.Add("@StatusId", SqlDbType.Int).Value = updatedOrders.OrderStatus;
-                cmd.Parameters.AddWithValue("@OrderId", updatedOrders.OrderId);
-                cmd.Parameters.AddWithValue("@StatusId", updatedOrders.OrderStatus);
-                cmd.Parameters.Add("@Payment_mode", SqlDbType.NVarChar, 50).Value = updatedOrders.paymentMode ?? (object)DBNull.Value;
+                    cmd.Parameters.Add("@OrderId", SqlDbType.NVarChar, 50)
+                        .Value = updatedOrders.OrderId;
 
-                var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
-                {
-                    Direction = ParameterDirection.Output
-                };
-                cmd.Parameters.Add(rowsParam);
+                    cmd.Parameters.Add("@StatusId", SqlDbType.Int)
+                        .Value = updatedOrders.OrderStatus;
 
+                    cmd.Parameters.Add("@Payment_mode", SqlDbType.NVarChar, 50)
+                        .Value = string.IsNullOrEmpty(updatedOrders.paymentMode)
+                                ? DBNull.Value
+                                : updatedOrders.paymentMode;
 
-                _ = await cmd.ExecuteNonQueryAsync();
+                    cmd.Parameters.Add("@DeliveryStaffId", SqlDbType.Int)
+                        .Value = updatedOrders.DeliveryStaffId.HasValue
+                                ? updatedOrders.DeliveryStaffId.Value
+                                : DBNull.Value;
 
-                var rows = rowsParam.Value is int n ? n : 0;
-                flag = rows > 0;
+                    var rowsParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(rowsParam);
+
+                    await cmd.ExecuteNonQueryAsync();
+
+                    int rows = (int)(rowsParam.Value ?? 0);
+                    flag = rows > 0;
+                }
             }
             catch (Exception ex)
             {
@@ -1052,6 +1074,7 @@ namespace OrderService.Repository.Service
                 if (con.State == ConnectionState.Open)
                     con.Close();
             }
+
             return flag;
         }
         public async Task<bool> RejectCoffeeOrder(string OrderId)

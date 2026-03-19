@@ -2,12 +2,8 @@
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using OrderService.Model;
 using OrderService.Repository.Interface;
-using OrderService.Repository.Service;
-using System.Reflection;
-using System.Security.Claims;
 
 namespace OrderService.Controllers
 {
@@ -367,10 +363,9 @@ namespace OrderService.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCustomerAddress(string userId)
         {
+            var result = await _oderRepository.GetCustomerAddressOnline(userId);
 
-            var address = await _oderRepository.GetCustomerAddressOnline(userId); 
-
-            if (address == null)
+            if (result == null || string.IsNullOrEmpty(result.Address))
             {
                 return Ok(new
                 {
@@ -382,7 +377,7 @@ namespace OrderService.Controllers
             return Ok(new
             {
                 success = true,
-                address
+                data = result
             });
         }
 
