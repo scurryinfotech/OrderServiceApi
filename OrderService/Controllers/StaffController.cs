@@ -14,7 +14,10 @@ namespace OrderService.Controllers
         public async Task<IActionResult> GetAll()
         {
             try { return Ok(await _repo.GetAllStaffAsync()); }
-            catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message, stackTrace = ex.StackTrace });
+            }
         }
 
         [HttpGet("{id:int}")]

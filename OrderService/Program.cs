@@ -2,7 +2,8 @@
 using Microsoft.IdentityModel.Tokens;
 using OrderService.Repository.Interface;
 using OrderService.Repository.Service;
-using OrderService.Repository.Service;
+using OrderService.Repository.SQLite;
+using OrderService.Services;
 using System.Text;
 
 
@@ -21,7 +22,7 @@ if (string.IsNullOrEmpty(secretKey))
 
 var key = Encoding.ASCII.GetBytes(secretKey);
 
-
+builder.WebHost.UseUrls("http://localhost:5050");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -54,6 +55,13 @@ builder.Services.AddScoped<IPayrollRepository, PayrollRepository>();
 builder.Services.AddScoped<ISalaryDashboardRepository, SalaryDashboardRepository>();
 builder.Services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
 
+//SQLite ka DI  testing di
+builder.Services.AddScoped<IDailyExpenseRepository, DailyExpenseSQLiteRepository>();
+builder.Services.AddTransient<IShopExpenseRepository, ShopExpenseSQLiteRepository>();
+builder.Services.AddTransient<IStaffRepository, StaffSQLiteRepository>();
+//builder.Services.AddScoped<ISalaryPaymentRepository,SalaryPaymentSQLiteRepository>();
+//builder.Services.AddScoped<ISalaryDashboardRepository,SalaryDashboardSQLiteRepository>();
+
 
 builder.Services.AddMemoryCache();
 
@@ -66,7 +74,7 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
-
+builder.Services.AddHostedService<SyncService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

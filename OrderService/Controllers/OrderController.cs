@@ -586,7 +586,7 @@ namespace OrderService.Controllers
             return Ok(menu);
         }
 
-        [HttpPost]
+        [HttpPost]  
         public async Task<IActionResult> CoffeeOrder([FromBody] CoffeeOrder order)
         {
             if (order == null)
