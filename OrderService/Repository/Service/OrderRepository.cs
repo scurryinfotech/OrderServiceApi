@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Data.SqlClient;
 using OrderService.Model;
 using OrderService.Repository.Interface;
 using System.Data;
-using System.Net;
-using System.Transactions;
+using OrderService.Services;
 
 namespace OrderService.Repository.Service
 {
-    public class OrderRepository : IOrderRepository
+    public class OrderRepository : IOrderRepository, IOrderService
     {
         private IConfiguration Configuration;
         private SqlConnection con;
@@ -942,6 +939,9 @@ namespace OrderService.Repository.Service
             }
             return orderList;
         }
+        // Note: Payment verification is handled by the dedicated PaymentService.
+        // This repository exposes placeOnline through IOrderService and
+        // should not duplicate signature verification logic.
         public async Task<bool> placeOnline(OrderModel order)
         {
             bool flag = false;
@@ -952,21 +952,25 @@ namespace OrderService.Repository.Service
                 {
                     SqlCommand cmd = new SqlCommand("sp_InsertOrderOnline", con, transaction);
                     cmd.CommandType = CommandType.StoredProcedure;
+
+                    // ── existing params (unchanged) ──
                     cmd.Parameters.AddWithValue("@TableNo", order.selectedTable ?? 0);
-
-
                     cmd.Parameters.AddWithValue("@CreatedBy", Convert.ToInt32(order.userName));
                     cmd.Parameters.AddWithValue("@CustomerName", order.customerName ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@phone", order.userPhone ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@orderType", order.OrderType ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@address", order.Address ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@OrderType", order.OrderType ?? (object)DBNull.Value);
-                    //cmd.Parameters.AddWithValue("@DeliveryType", order.DeliveryType ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@specialInstruction", order.specialInstruction ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@userId", order.userId);
 
+                    // ── new payment params ──
+                    cmd.Parameters.AddWithValue("@PaymentMode", order.PaymentMode ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@PaymentStatus", order.PaymentStatus ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@RazorpayOrderId", order.RazorpayOrderId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@RazorpayPaymentId", order.RazorpayPaymentId ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@RazorpaySignature", order.RazorpaySignature ?? (object)DBNull.Value);
 
-                    // Table-valued parameter
+                    // ── table-valued param (unchanged) ──
                     var orderItemsTable = new DataTable();
                     orderItemsTable.Columns.Add("item_id", typeof(int));
                     orderItemsTable.Columns.Add("FullPortion", typeof(int));
@@ -974,12 +978,10 @@ namespace OrderService.Repository.Service
                     orderItemsTable.Columns.Add("Price", typeof(double));
 
                     foreach (var item in order.orderItems)
-                    {
-                        int itemValue = item.item_id > 0 ? item.item_id : 0;
-                        orderItemsTable.Rows.Add(itemValue, item.full, item.half, item.Price);
-                    }
+                        orderItemsTable.Rows.Add(
+                            item.item_id > 0 ? item.item_id : 0,
+                            item.full, item.half, item.Price);
 
-                    // Use SqlParameter with Structured type
                     var orderItemsParam = new SqlParameter("@OrderItems", SqlDbType.Structured)
                     {
                         TypeName = "dbo.OrderItemTableType",
@@ -987,7 +989,6 @@ namespace OrderService.Repository.Service
                     };
                     cmd.Parameters.Add(orderItemsParam);
 
-                    // Add the output parameter
                     var insertedCountParam = new SqlParameter("@InsertedCount", SqlDbType.Int)
                     {
                         Direction = ParameterDirection.Output
@@ -996,30 +997,20 @@ namespace OrderService.Repository.Service
 
                     await cmd.ExecuteNonQueryAsync();
 
-                    int insertedCount = insertedCountParam.Value != DBNull.Value ? (int)insertedCountParam.Value : 0;
+                    int insertedCount = insertedCountParam.Value != DBNull.Value
+                        ? (int)insertedCountParam.Value : 0;
 
-                    if (insertedCount > 0)
-                    {
-                        transaction.Commit();
-                        flag = true;
-                    }
-                    else
-                    {
-                        transaction.Rollback();
-                    }
+                    if (insertedCount > 0) { transaction.Commit(); flag = true; }
+                    else { transaction.Rollback(); }
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error: " + ex.Message);
-                return flag;
             }
             finally
             {
-                if (con.State == ConnectionState.Open)
-                {
-                    con.Close();
-                }
+                if (con.State == ConnectionState.Open) con.Close();
             }
             return flag;
         }
