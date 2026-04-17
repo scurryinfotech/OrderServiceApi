@@ -37,7 +37,7 @@ namespace OrderService.Controllers
         /// Verifies signature then writes to Orders table.
         /// </summary>
         [HttpPost("VerifyAndPlaceOrder")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> VerifyAndPlaceOrder(
             [FromBody] VerifyAndPlaceOrderRequest request)
         {
@@ -57,11 +57,16 @@ namespace OrderService.Controllers
                     message = "Order details missing"
                 });
 
-            var result = await _paymentService.VerifyAndPlaceOrderAsync(request);
-
-            return result.Success
-                ? Ok(result)
-                : BadRequest(result);
+            try
+            {
+                var result = await _paymentService.VerifyAndPlaceOrderAsync(request);
+                return result.Success ? Ok(result) : BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in VerifyAndPlaceOrder endpoint: " + ex);
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
         }
     }
 }

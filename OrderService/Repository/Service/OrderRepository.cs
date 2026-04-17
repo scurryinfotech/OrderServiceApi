@@ -491,7 +491,9 @@ namespace OrderService.Repository.Service
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                // Log full exception and rethrow so callers (PaymentService) can handle and record failure reasons
+                Console.WriteLine("Error in placeOnline: " + ex.ToString());
+                throw;
             }
 
             return flag;
