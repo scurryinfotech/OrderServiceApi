@@ -411,20 +411,17 @@ namespace OrderService.Controllers
             }
         }
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<OrderModel>>> GetOrderOnline(string username)
+        public async Task<ActionResult<IEnumerable<OrderListModel2>>> GetOrderOnline(string username)
         {
-            // Validate the token
-            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-            if (_jwtService.ValidateToken(token))
-            {
-                var orders = await _oderRepository.GetOrder(username);
-                var onlineOrders = orders.Where(o => o.IsActive == 1 && o.OrderType == "Online").ToList();
-                return Ok(onlineOrders);
-            }
-            else
-            {
-                return Unauthorized();
-            }
+           
+
+            var orders = await _oderRepository.GetOrderOnline(username);
+
+            var onlineOrders = orders
+                .Where(o => o.IsActive == 1 && o.OrderType == "Online")
+                .ToList();
+
+            return Ok(onlineOrders);
         }
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderModel>>> GetOrderHome(string? username, int? userId = null)

@@ -118,6 +118,86 @@ namespace OrderService.Repository.Service
             }
             return orderList;
         }
+        public async Task<List<OrderListModel2>> GetOrderOnline(string userName)
+        {
+            List<OrderListModel2> orderList = new List<OrderListModel2>();
+            try
+            {
+                connection();
+                using (SqlCommand cmd = new SqlCommand("sp_GetOrder", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@UserName", userName);
+
+                    using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                    {
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        foreach (DataRow dr in dt.Rows)
+                        {
+                            var order = new OrderListModel2
+                            {
+                                // ── existing fields (unchanged) ──
+                                Id = dr["Id"] == DBNull.Value ? 0 : Convert.ToInt32(dr["Id"]),
+                                TableNo = dr["TableNo"] == DBNull.Value ? 0 : Convert.ToInt32(dr["TableNo"]),
+                                OrderId = dr["OrderId"] == DBNull.Value ? string.Empty : dr["OrderId"].ToString(),
+                                OrderStatusId = dr["OrderStatusId"] == DBNull.Value ? 0 : Convert.ToInt32(dr["OrderStatusId"]),
+                                OrderStatus = dr["OrderStatus"] == DBNull.Value ? string.Empty : dr["OrderStatus"].ToString(),
+                                ItemName = dr["ItemName"] == DBNull.Value ? string.Empty : dr["ItemName"].ToString(),
+                                HalfPortion = dr["HalfPortion"] == DBNull.Value ? 0 : Convert.ToInt32(dr["HalfPortion"]),
+                                FullPortion = dr["FullPortion"] == DBNull.Value ? 0 : Convert.ToInt32(dr["FullPortion"]),
+                                Price = dr["Price"] == DBNull.Value ? 0 : Convert.ToDecimal(dr["Price"]),
+                                Date = dr["Date"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["Date"]),
+                                ModifiedDate = dr["ModifiedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["ModifiedDate"]),
+                                CreatedDate = dr["CreatedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["CreatedDate"]),
+                                customerName = dr["customerName"] == DBNull.Value ? string.Empty : dr["customerName"].ToString(),
+                                phone = dr["phone"] == DBNull.Value ? string.Empty : dr["phone"].ToString(),
+                                OrderType = dr["OrderType"] == DBNull.Value ? string.Empty : dr["OrderType"].ToString(),
+                                Address = dr["Address"] == DBNull.Value ? string.Empty : dr["Address"].ToString(),
+                                specialInstructions = dr["specialInstructions"] == DBNull.Value ? string.Empty : dr["specialInstructions"].ToString(),
+                                IsActive = dr["IsActive"] == DBNull.Value ? 0 : Convert.ToInt32(dr["IsActive"]),
+
+                                // ── existing payment field ──
+                                paymentMode = dr.Table.Columns.Contains("payment_mode") && dr["payment_mode"] != DBNull.Value
+                                    ? dr["payment_mode"].ToString()
+                                    : string.Empty,
+
+                                // ── NEW payment fields ──
+                                PaymentStatus = dr.Table.Columns.Contains("PaymentStatus") && dr["PaymentStatus"] != DBNull.Value
+                                    ? dr["PaymentStatus"].ToString()
+                                    : string.Empty,
+
+                                RazorpayOrderId = dr.Table.Columns.Contains("RazorpayOrderId") && dr["RazorpayOrderId"] != DBNull.Value
+                                    ? dr["RazorpayOrderId"].ToString()
+                                    : string.Empty,
+
+                                RazorpayPaymentId = dr.Table.Columns.Contains("RazorpayPaymentId") && dr["RazorpayPaymentId"] != DBNull.Value
+                                    ? dr["RazorpayPaymentId"].ToString()
+                                    : string.Empty,
+
+                                PaymentLabel = dr.Table.Columns.Contains("PaymentLabel") && dr["PaymentLabel"] != DBNull.Value
+                                    ? dr["PaymentLabel"].ToString()
+                                    : string.Empty,
+                            };
+
+                            orderList.Add(order);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+                return orderList;
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+            return orderList;
+        }
         public async Task<List<MenuCategory>> GetMenuCategory(string UserName)
         {
             List<MenuCategory> categoryList = new List<MenuCategory>();
@@ -947,32 +1027,53 @@ namespace OrderService.Repository.Service
         public async Task<bool> placeOnline(OrderModel order)
         {
             bool flag = false;
+            int newOrderId = 0; 
             connection();
+
             try
             {
+                // Basic validation and logging to help diagnose stored proc failures
+                if (order == null)
+                {
+                    Console.WriteLine("placeOnline: order is null");
+                    return false;
+                }
+
+                Console.WriteLine($"placeOnline called. userId={order.userId}, selectedTable={order.selectedTable}, items={(order.orderItems?.Count ?? 0)}, PaymentMode={order.PaymentMode}, RazorpayOrderId={order.RazorpayOrderId}");
+
+                if (order.userId <= 0)
+                {
+                    Console.WriteLine("placeOnline: invalid userId (must be > 0)");
+                    return false;
+                }
+
+                if (order.orderItems == null || order.orderItems.Count == 0)
+                {
+                    Console.WriteLine("placeOnline: orderItems is empty");
+                    return false;
+                }
                 using (SqlTransaction transaction = con.BeginTransaction())
                 {
                     SqlCommand cmd = new SqlCommand("sp_InsertOrderOnline", con, transaction);
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    // ── existing params (unchanged) ──
+                    // ── basic params ──
                     cmd.Parameters.AddWithValue("@TableNo", order.selectedTable ?? 0);
-                    cmd.Parameters.AddWithValue("@CreatedBy", Convert.ToInt32(order.userName));
+                    cmd.Parameters.AddWithValue("@CreatedBy", order.userName); 
                     cmd.Parameters.AddWithValue("@CustomerName", order.customerName ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@phone", order.userPhone ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@orderType", order.OrderType ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@address", order.Address ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@OrderType", order.OrderType ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Address", order.Address ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@specialInstruction", order.specialInstruction ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@userId", order.userId);
 
-                    // ── new payment params ──
+                    // ── payment params ──
                     cmd.Parameters.AddWithValue("@PaymentMode", order.PaymentMode ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@PaymentStatus", order.PaymentStatus ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@RazorpayOrderId", order.RazorpayOrderId ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@RazorpayPaymentId", order.RazorpayPaymentId ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@RazorpaySignature", order.RazorpaySignature ?? (object)DBNull.Value);
 
-                    // ── table-valued param (unchanged) ──
                     var orderItemsTable = new DataTable();
                     orderItemsTable.Columns.Add("item_id", typeof(int));
                     orderItemsTable.Columns.Add("FullPortion", typeof(int));
@@ -980,9 +1081,14 @@ namespace OrderService.Repository.Service
                     orderItemsTable.Columns.Add("Price", typeof(double));
 
                     foreach (var item in order.orderItems)
+                    {
                         orderItemsTable.Rows.Add(
                             item.item_id > 0 ? item.item_id : 0,
-                            item.full, item.half, item.Price);
+                            item.full,
+                            item.half,
+                            item.Price
+                        );
+                    }
 
                     var orderItemsParam = new SqlParameter("@OrderItems", SqlDbType.Structured)
                     {
@@ -997,27 +1103,53 @@ namespace OrderService.Repository.Service
                     };
                     cmd.Parameters.Add(insertedCountParam);
 
+                    var orderIdParam = new SqlParameter("@NewOrderDbId", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(orderIdParam);
+
                     await cmd.ExecuteNonQueryAsync();
 
                     int insertedCount = insertedCountParam.Value != DBNull.Value
                         ? (int)insertedCountParam.Value : 0;
 
-                    if (insertedCount > 0) { transaction.Commit(); flag = true; }
-                    else { transaction.Rollback(); }
+                    newOrderId = orderIdParam.Value != DBNull.Value
+                        ? (int)orderIdParam.Value : 0;
+
+                    order.GeneratedOrderId = newOrderId;
+
+                    // Log output parameters for troubleshooting
+                    Console.WriteLine($"sp_InsertOrderOnline outputs - InsertedCount: {insertedCount}, NewOrderDbId: {newOrderId}");
+
+                    if (insertedCount > 0 && newOrderId > 0)
+                    {
+                        transaction.Commit();
+                        flag = true;
+
+                        Console.WriteLine("Order Created with ID: " + newOrderId);
+                    }
+                    else
+                    {
+                        transaction.Rollback();
+                        flag = false;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                // Log full exception stack for diagnostics
+                Console.WriteLine("Error in placeOnline: " + ex.ToString());
+                flag = false;
             }
             finally
             {
-                if (con.State == ConnectionState.Open) con.Close();
+                if (con.State == ConnectionState.Open)
+                    con.Close();
             }
+
             return flag;
         }
-
-        //This is for the status update for the online orders
         public async Task<bool> UpdateOnlineStatus(OnlineOrderModel updatedOrders)
         {
             bool flag = false;

@@ -18,7 +18,7 @@
         public string? RazorpayOrderId { get; set; }
         public string? RazorpayPaymentId { get; set; }
         public string? RazorpaySignature { get; set; }
-
+        public int GeneratedOrderId { get; set; }
         public List<OrderItem> orderItems { get; set; }
 
         public class OrderItem

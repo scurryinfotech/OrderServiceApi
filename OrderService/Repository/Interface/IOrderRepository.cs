@@ -7,6 +7,7 @@ namespace OrderService.Repository.Interface
     {
         int GetTableCount(string userName);
         Task<List<OrderListModel>> GetOrder(string UserName);
+        Task<List<OrderListModel2>> GetOrderOnline(string UserName);
         Task<List<MenuCategory>> GetMenuCategory(string UserName);
         Task<List<MenuSubcategory>> GetMenuSubcategory(string UserName);
         Task<List<MenuItem>> GetMenuItem(string UserName);

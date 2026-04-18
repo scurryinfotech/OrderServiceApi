@@ -111,6 +111,105 @@ namespace OrderService.Repository.Service
             catch (Exception ex) { Console.WriteLine("GetOrder Error: " + ex.Message); }
             return list;
         }
+        public async Task<List<OrderListModel2>> GetOrderOnline(string userName)
+        {
+            List<OrderListModel2> orderList = new List<OrderListModel2>();
+
+            try
+            {
+                using (var con = new SqliteConnection("Data Source=yourdb.db"))
+                {
+                    await con.OpenAsync();
+
+                    string query = @"SELECT
+                o.Id,
+                o.TableNo,
+                o.OrderId,
+                o.CustomerName,
+                o.Phone,
+                o.Address,
+                o.OrderType,
+                o.ModifiedDate,
+                mi.item_name AS ItemName,
+                o.HalfPortion,
+                o.FullPortion,
+                o.Price,
+                o.payment_mode,
+                o.PaymentStatus,
+                o.RazorpayOrderId,
+                o.RazorpayPaymentId,
+                o.CreatedDate,
+                o.specialInstructions,
+                o.OrderStatus AS OrderStatusId,
+                osm.Name AS OrderStatus,
+                o.CreatedDate AS Date,
+                o.IsActive,
+                CASE
+                    WHEN o.payment_mode = 'online' AND o.PaymentStatus = 'Success'
+                        THEN 'Paid Online'
+                    WHEN o.payment_mode = 'cod'
+                        THEN 'Cash on Delivery'
+                    ELSE 'Unknown'
+                END AS PaymentLabel
+            FROM Orders o
+            LEFT JOIN menu_items mi ON mi.item_id = o.item_id
+            LEFT JOIN OrderStatusMaster osm ON osm.Id = o.OrderStatus
+            WHERE o.CreatedBy = (
+                SELECT Id FROM Users WHERE Username = @Username
+            )
+            AND (o.IsActive = 1 OR o.OrderStatus IN (1, 3))
+            ORDER BY o.CreatedDate DESC, o.OrderId DESC
+            LIMIT 400;";
+
+                    using (var cmd = new SqliteCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@Username", userName);
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var order = new OrderListModel2
+                                {
+                                    Id = reader["Id"] != DBNull.Value ? Convert.ToInt32(reader["Id"]) : 0,
+                                    TableNo = reader["TableNo"] != DBNull.Value ? Convert.ToInt32(reader["TableNo"]) : 0,
+                                    OrderId = reader["OrderId"]?.ToString() ?? "",
+                                    OrderStatusId = reader["OrderStatusId"] != DBNull.Value ? Convert.ToInt32(reader["OrderStatusId"]) : 0,
+                                    OrderStatus = reader["OrderStatus"]?.ToString() ?? "",
+                                    ItemName = reader["ItemName"]?.ToString() ?? "",
+                                    HalfPortion = reader["HalfPortion"] != DBNull.Value ? Convert.ToInt32(reader["HalfPortion"]) : 0,
+                                    FullPortion = reader["FullPortion"] != DBNull.Value ? Convert.ToInt32(reader["FullPortion"]) : 0,
+                                    Price = reader["Price"] != DBNull.Value ? Convert.ToDecimal(reader["Price"]) : 0,
+                                    Date = reader["Date"] != DBNull.Value ? Convert.ToDateTime(reader["Date"]) : DateTime.MinValue,
+                                    ModifiedDate = reader["ModifiedDate"] != DBNull.Value ? Convert.ToDateTime(reader["ModifiedDate"]) : DateTime.MinValue,
+                                    CreatedDate = reader["CreatedDate"] != DBNull.Value ? Convert.ToDateTime(reader["CreatedDate"]) : DateTime.MinValue,
+                                    customerName = reader["CustomerName"]?.ToString() ?? "",
+                                    phone = reader["Phone"]?.ToString() ?? "",
+                                    OrderType = reader["OrderType"]?.ToString() ?? "",
+                                    Address = reader["Address"]?.ToString() ?? "",
+                                    specialInstructions = reader["specialInstructions"]?.ToString() ?? "",
+                                    IsActive = reader["IsActive"] != DBNull.Value ? Convert.ToInt32(reader["IsActive"]) : 0,
+
+                                    paymentMode = reader["payment_mode"]?.ToString() ?? "",
+                                    PaymentStatus = reader["PaymentStatus"]?.ToString() ?? "",
+                                    RazorpayOrderId = reader["RazorpayOrderId"]?.ToString() ?? "",
+                                    RazorpayPaymentId = reader["RazorpayPaymentId"]?.ToString() ?? "",
+                                    PaymentLabel = reader["PaymentLabel"]?.ToString() ?? ""
+                                };
+
+                                orderList.Add(order);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+
+            return orderList;
+        }
 
         public async Task<List<OrderListModel>> GetOrderHomeDelivery(int userId)
         {

@@ -19,7 +19,7 @@ namespace OrderService.Services
         private readonly string _connectionString;
         private readonly string _keyId;
         private readonly string _keySecret;
-        private readonly IOrderService _orderService;   // your existing order service
+        private readonly IOrderService _orderService;  
         private readonly HttpClient _httpClient;
 
         public PaymentService(IConfiguration config, IOrderService orderService, IHttpClientFactory httpClientFactory)
@@ -144,7 +144,7 @@ namespace OrderService.Services
                 request.RazorpayPaymentId,
                 request.RazorpaySignature,
                 "Success",
-                null,
+                 request.Order.GeneratedOrderId.ToString(),
                 null);
 
             return new PaymentVerifyResponse { Success = true, Message = "Order placed successfully!" };
@@ -236,9 +236,6 @@ namespace OrderService.Services
                         VALUES
                             (@RzpOrderId, @RzpPaymentId, @RzpSignature,
                              @Amount, @Currency, @Status, @Receipt, @UserId, @OrderDbId, @FailureReason)", con);
-
-                    // We don't have amount/currency/receipt/user for the fallback update in all cases.
-                    // Set them to NULL so the INSERT does not fail because of missing data.
                     insertCmd.Parameters.AddWithValue("@RzpOrderId", rzpOrderId ?? (object)DBNull.Value);
                     insertCmd.Parameters.AddWithValue("@RzpPaymentId", rzpPaymentId ?? (object)DBNull.Value);
                     insertCmd.Parameters.AddWithValue("@RzpSignature", rzpSignature ?? (object)DBNull.Value);
