@@ -16,7 +16,7 @@ public class OrderListModel
     public int IsActive { get; set; }        
     public string? customerName { get; set; } 
     public string?phone { get; set; }        
-    public DateTime? ModifiedDate { get; set; }
+    public DateTime? ModifiedDate { get; set; } 
     public string? OrderId { get; set; }
     public int? StatusId { get; set; }
     public string? OrderType { get; set; }

@@ -211,9 +211,9 @@ namespace OrderService.Repository.Service
             return orderList;
         }
 
-        public async Task<List<OrderListModel>> GetOrderHomeDelivery(int userId)
+        public async Task<List<OrderListModel2>> GetOrderHomeDelivery(int userId)
         {
-            var list = new List<OrderListModel>();
+            var list = new List<OrderListModel2>();
             try
             {
                 await using var con = await SQLiteHelper.OpenAsync(_sqliteCs);
@@ -236,7 +236,45 @@ namespace OrderService.Repository.Service
                     WHERE  o.UserId = @UserId");
                 cmd.Parameters.AddWithValue("@UserId", userId);
                 await using var rdr = await cmd.ExecuteReaderAsync();
-                while (await rdr.ReadAsync()) list.Add(MapOrderWithDelivery(rdr));
+
+                while (await rdr.ReadAsync())
+                {
+                    var order = new OrderListModel2
+                    {
+                        Id = rdr.IsDBNull(0) ? 0 : rdr.GetInt32(0),
+                        OrderId = rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1),
+                        OrderStatusId = rdr.IsDBNull(2) ? 0 : rdr.GetInt32(2),
+                        FullPortion = rdr.IsDBNull(3) ? 0 : rdr.GetInt32(3),
+                        HalfPortion = rdr.IsDBNull(4) ? 0 : rdr.GetInt32(4),
+                        TableNo = rdr.IsDBNull(5) ? 0 : rdr.GetInt32(5),
+                        CreatedDate = rdr.IsDBNull(6) ? DateTime.MinValue : DateTime.Parse(rdr.GetString(6)),
+                        ModifiedDate = rdr.IsDBNull(7) ? DateTime.MinValue : DateTime.Parse(rdr.GetString(7)),
+                        IsActive = rdr.IsDBNull(8) ? 0 : rdr.GetInt32(8),
+                        ItemName = rdr.IsDBNull(18) ? string.Empty : rdr.GetString(18),
+                        Price = rdr.IsDBNull(10) ? 0 : rdr.GetDecimal(10),
+                        customerName = rdr.IsDBNull(11) ? string.Empty : rdr.GetString(11),
+                        phone = rdr.IsDBNull(12) ? string.Empty : rdr.GetString(12),
+                        OrderType = rdr.IsDBNull(13) ? string.Empty : rdr.GetString(13),
+                        Address = rdr.IsDBNull(14) ? string.Empty : rdr.GetString(14),
+                        specialInstructions = rdr.IsDBNull(15) ? string.Empty : rdr.GetString(15),
+                        userId = rdr.IsDBNull(16) ? string.Empty : rdr.GetString(16),
+
+                        paymentMode = rdr.IsDBNull(15) ? string.Empty : rdr.GetString(15),
+                        PaymentStatus = string.Empty,
+                        RazorpayOrderId = string.Empty,
+                        RazorpayPaymentId = string.Empty,
+
+                        Discount = rdr.IsDBNull(19) ? string.Empty : rdr.GetValue(19)?.ToString(),
+                        DeliveryName = rdr.IsDBNull(20) ? string.Empty : rdr.GetString(20),
+                        DeliveryPhone = rdr.IsDBNull(21) ? string.Empty : rdr.GetString(21),
+
+                        // set dates mapping
+                        Date = rdr.IsDBNull(6) ? DateTime.MinValue : DateTime.Parse(rdr.GetString(6)),
+                        OrderStatus = rdr.IsDBNull(18) ? string.Empty : rdr.GetString(18)
+                    };
+
+                    list.Add(order);
+                }
             }
             catch (Exception ex) { Console.WriteLine("GetOrderHomeDelivery Error: " + ex.Message); }
             return list;
