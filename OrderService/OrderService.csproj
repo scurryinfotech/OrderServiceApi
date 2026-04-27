@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="VendorModel\**" />
+    <Content Remove="VendorModel\**" />
+    <EmbeddedResource Remove="VendorModel\**" />
+    <None Remove="VendorModel\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.3.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
@@ -14,6 +21,10 @@
     <PackageReference Include="Razorpay" Version="3.3.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
     <PackageReference Include="Twilio" Version="7.13.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="VendorModels\" />
   </ItemGroup>
 
 </Project>

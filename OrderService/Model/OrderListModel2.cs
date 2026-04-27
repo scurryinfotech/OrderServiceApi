@@ -29,5 +29,19 @@
         public string RazorpayOrderId { get; set; }
         public string RazorpayPaymentId { get; set; }
         public string PaymentLabel { get; set; }
+
+        // ── Added to match mapping in repository
+        public string? userId { get; set; }
+        public string? Discount { get; set; }
+        public string? DeliveryName { get; set; }
+        public string? DeliveryPhone { get; set; }
+
+        public decimal? PaymentAmount { get; set; }
+        public string? PaymentCurrency { get; set; }
+        public string? PaymentReceipt { get; set; }
+        public string? FailureReason { get; set; }
+        public DateTime? PaymentCreatedAt { get; set; }
+        public DateTime? PaymentUpdatedAt { get; set; }
+        public string? ResolvedPaymentMode { get; set; }
     }
 }

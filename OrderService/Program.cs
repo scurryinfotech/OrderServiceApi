@@ -82,11 +82,6 @@ builder.Services.AddScoped<IPayrollRepository, PayrollRepository>();
 builder.Services.AddScoped<ISalaryDashboardRepository, SalaryDashboardRepository>();
 builder.Services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
 
-// ── Repositories: SQL vs SQLite ──────────────────────────────
-// Set UseSQLite = true in appsettings.json to switch to SQLite for
-// DailyExpense, ShopExpense, and Staff repositories.
-// Only ONE implementation should be registered per interface.
-// ─────────────────────────────────────────────────────────────
 bool useSQLite = builder.Configuration.GetValue<bool>("UseSQLite");
 
 if (useSQLite)
@@ -100,6 +95,10 @@ else
     builder.Services.AddScoped<IDailyExpenseRepository, DailyExpenseRepository>();
     builder.Services.AddTransient<IShopExpenseRepository, ShopExpenseRepository>();
     builder.Services.AddTransient<IStaffRepository, StaffRepository>();
+    builder.Services.AddScoped<IVendorRepository, VendorRepository>();
+    builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+    builder.Services.AddScoped<IVendorPaymentRepository, VendorPaymentRepository>();
+
 }
 
 // These do not have SQLite variants yet
@@ -173,42 +172,5 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Ensure PaymentTransactions table exists to avoid runtime SQL errors
-try
-{
-    var connStr = app.Configuration.GetConnectionString("ConnStringDb");
-    if (!string.IsNullOrEmpty(connStr))
-    {
-        using var con = new SqlConnection(connStr);
-        con.Open();
-        var cmdText = @"
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PaymentTransactions]') AND type in (N'U'))
-BEGIN
-    CREATE TABLE [dbo].[PaymentTransactions]
-    (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        RazorpayOrderId NVARCHAR(100) NULL,
-        RazorpayPaymentId NVARCHAR(100) NULL,
-        RazorpaySignature NVARCHAR(200) NULL,
-        Amount DECIMAL(18,2) NULL,
-        Currency NVARCHAR(10) NULL,
-        Status NVARCHAR(50) NULL,
-        Receipt NVARCHAR(200) NULL,
-        UserId INT NULL,
-        OrderDbId NVARCHAR(100) NULL,
-        FailureReason NVARCHAR(500) NULL,
-        CreatedAt DATETIME DEFAULT GETDATE(),
-        UpdatedAt DATETIME NULL
-    )
-END";
-
-        using var cmd = new SqlCommand(cmdText, con);
-        cmd.ExecuteNonQuery();
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine("Failed to ensure PaymentTransactions table exists: " + ex.Message);
-}
 
 app.Run();

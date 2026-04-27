@@ -960,9 +960,9 @@ namespace OrderService.Repository.Service
                     con.Close();
             }
         }
-        public async Task<List<OrderListModel>> GetOrderHomeDelivery(int userId)
+        public async Task<List<OrderListModel2>> GetOrderHomeDelivery(int userId)
         {
-            List<OrderListModel> orderList = new List<OrderListModel>();
+            List<OrderListModel2> orderList = new List<OrderListModel2>();
             try
             {
                 connection();
@@ -970,37 +970,80 @@ namespace OrderService.Repository.Service
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@userId", userId);
+
                     using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                     {
                         DataTable dt = new DataTable();
                         da.Fill(dt);
+
                         foreach (DataRow dr in dt.Rows)
                         {
-                            var order = new OrderListModel
+                            var order = new OrderListModel2
                             {
-                                TableNo = dr["TableNo"] == DBNull.Value ? 0 : Convert.ToInt32(dr["TableNo"]),
+                                // ── existing fields ──
                                 Id = dr["Id"] == DBNull.Value ? 0 : Convert.ToInt32(dr["Id"]),
+                                TableNo = dr["TableNo"] == DBNull.Value ? 0 : Convert.ToInt32(dr["TableNo"]),
                                 OrderId = dr["OrderId"] == DBNull.Value ? string.Empty : dr["OrderId"].ToString(),
                                 OrderStatusId = dr["OrderStatusId"] == DBNull.Value ? 0 : Convert.ToInt32(dr["OrderStatusId"]),
+                                OrderStatus = dr["OrderStatus"] == DBNull.Value ? string.Empty : dr["OrderStatus"].ToString(),
                                 ItemName = dr["ItemName"] == DBNull.Value ? string.Empty : dr["ItemName"].ToString(),
                                 HalfPortion = dr["HalfPortion"] == DBNull.Value ? 0 : Convert.ToInt32(dr["HalfPortion"]),
                                 FullPortion = dr["FullPortion"] == DBNull.Value ? 0 : Convert.ToInt32(dr["FullPortion"]),
                                 Price = dr["Price"] == DBNull.Value ? 0 : Convert.ToDecimal(dr["Price"]),
-                                OrderStatus = dr["OrderStatus"] == DBNull.Value ? string.Empty : dr["OrderStatus"].ToString(),
                                 Date = dr["Date"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["Date"]),
                                 ModifiedDate = dr["ModifiedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["ModifiedDate"]),
+                                CreatedDate = dr["CreatedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["CreatedDate"]),
                                 customerName = dr["customerName"] == DBNull.Value ? string.Empty : dr["customerName"].ToString(),
                                 phone = dr["phone"] == DBNull.Value ? string.Empty : dr["phone"].ToString(),
                                 OrderType = dr["OrderType"] == DBNull.Value ? string.Empty : dr["OrderType"].ToString(),
                                 Address = dr["Address"] == DBNull.Value ? string.Empty : dr["Address"].ToString(),
-                                CreatedDate = dr["CreatedDate"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(dr["CreatedDate"]),
                                 specialInstructions = dr["specialInstructions"] == DBNull.Value ? string.Empty : dr["specialInstructions"].ToString(),
                                 userId = dr["userId"] == DBNull.Value ? string.Empty : dr["userId"].ToString(),
                                 IsActive = dr["IsActive"] == DBNull.Value ? 0 : Convert.ToInt32(dr["IsActive"]),
                                 Discount = dr["DiscountAmount"] == DBNull.Value ? string.Empty : dr["DiscountAmount"].ToString(),
                                 DeliveryName = dr["DeliveryName"] == DBNull.Value ? string.Empty : dr["DeliveryName"].ToString(),
                                 DeliveryPhone = dr["DeliveryPhone"] == DBNull.Value ? string.Empty : dr["DeliveryPhone"].ToString(),
+
+                                paymentMode = dr.Table.Columns.Contains("payment_mode") && dr["payment_mode"] != DBNull.Value
+                                    ? dr["payment_mode"].ToString() : string.Empty,
+
+                                // ── payment from PaymentTransactions ──
+                                RazorpayOrderId = dr.Table.Columns.Contains("RazorpayOrderId") && dr["RazorpayOrderId"] != DBNull.Value
+                                    ? dr["RazorpayOrderId"].ToString() : string.Empty,
+
+                                RazorpayPaymentId = dr.Table.Columns.Contains("RazorpayPaymentId") && dr["RazorpayPaymentId"] != DBNull.Value
+                                    ? dr["RazorpayPaymentId"].ToString() : string.Empty,
+
+                                PaymentAmount = dr.Table.Columns.Contains("PaymentAmount") && dr["PaymentAmount"] != DBNull.Value
+                                    ? Convert.ToDecimal(dr["PaymentAmount"]) : 0,
+
+                                PaymentCurrency = dr.Table.Columns.Contains("PaymentCurrency") && dr["PaymentCurrency"] != DBNull.Value
+                                    ? dr["PaymentCurrency"].ToString() : "INR",
+
+                                PaymentStatus = dr.Table.Columns.Contains("PaymentStatus") && dr["PaymentStatus"] != DBNull.Value
+                                    ? dr["PaymentStatus"].ToString() : string.Empty,
+
+                                PaymentReceipt = dr.Table.Columns.Contains("PaymentReceipt") && dr["PaymentReceipt"] != DBNull.Value
+                                    ? dr["PaymentReceipt"].ToString() : string.Empty,
+
+                                FailureReason = dr.Table.Columns.Contains("FailureReason") && dr["FailureReason"] != DBNull.Value
+                                    ? dr["FailureReason"].ToString() : string.Empty,
+
+                                PaymentCreatedAt = dr.Table.Columns.Contains("PaymentCreatedAt") && dr["PaymentCreatedAt"] != DBNull.Value
+                                    ? Convert.ToDateTime(dr["PaymentCreatedAt"]) : (DateTime?)null,
+
+                                PaymentUpdatedAt = dr.Table.Columns.Contains("PaymentUpdatedAt") && dr["PaymentUpdatedAt"] != DBNull.Value
+                                    ? Convert.ToDateTime(dr["PaymentUpdatedAt"]) : (DateTime?)null,
+
+                                // ── computed by SP ──
+                                PaymentLabel = dr.Table.Columns.Contains("PaymentLabel") && dr["PaymentLabel"] != DBNull.Value
+                                    ? dr["PaymentLabel"].ToString() : string.Empty,
+
+                                ResolvedPaymentMode = dr.Table.Columns.Contains("ResolvedPaymentM" +
+                                "ode") && dr["ResolvedPaymentMode"] != DBNull.Value
+                                    ? dr["ResolvedPaymentMode"].ToString() : string.Empty,
                             };
+
                             orderList.Add(order);
                         }
                     }
@@ -1010,14 +1053,10 @@ namespace OrderService.Repository.Service
             {
                 Console.WriteLine("Error: " + ex.Message);
                 return orderList;
-                throw new NotImplementedException();
             }
             finally
             {
-                if (con.State == ConnectionState.Open)
-                {
-                    con.Close();
-                }
+                if (con.State == ConnectionState.Open) con.Close();
             }
             return orderList;
         }

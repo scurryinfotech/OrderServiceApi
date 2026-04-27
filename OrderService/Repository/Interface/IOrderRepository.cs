@@ -16,7 +16,7 @@ namespace OrderService.Repository.Interface
         Task<bool> InsertToken(string username, string token, DateTime expiryDate);
         Task<bool> SoftDeleteOrder(int itemId);
         Task<bool> UpdateOrderStatus(OrderListModel updatedOrders);
-        Task<List<OrderListModel>> GetOrderHomeDelivery(int userId);
+        Task<List<OrderListModel2>> GetOrderHomeDelivery(int userId);
         Task<bool> placeOnline(OrderModel order);
         Task<bool> UpdateOnlineStatus(OnlineOrderModel updatedOrders);
         Task<List<CoffeeMenu>> GetCoffeeMenu(string username);
